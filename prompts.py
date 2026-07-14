@@ -1,6 +1,4 @@
-"""
-prompts.py — All LLM prompt templates for CodeExplain
-"""
+
 
 SYSTEM_PROMPT = """You are CodeExplain, an expert programming tutor and code analyst. 
 You excel at breaking down complex code into simple, understandable explanations.

@@ -25,17 +25,14 @@
 </head>
 <body>
 
-<!-- ── Particle Canvas ── -->
 <canvas id="particles-canvas"></canvas>
 <div class="orb orb-1"></div>
 <div class="orb orb-2"></div>
 <div class="orb orb-3"></div>
 
-<!-- ── App Shell ── -->
 <div class="app-shell">
 
-  <!-- ── Left Navigation Panel ── -->
-  <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo" style="position: relative;">
       <button id="desktop-collapse-btn" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: var(--text-sec); cursor: pointer; font-size: 1.2rem;" title="Collapse Sidebar">◀</button>
       <span class="logo-icon">🔮</span>
@@ -64,15 +61,12 @@
     </div>
   </aside>
 
-  <!-- ── Main Content ── -->
-  <main class="main-content">
+    <main class="main-content">
 
-    <!-- ── View Containers ── -->
-    
+        
     <!-- Analyze View -->
     <div id="analyze-view" class="view-container active-view">
-      <!-- ── Hero ── -->
-      <section class="hero-section">
+            <section class="hero-section">
         <div class="hero-badge">✨ AI-Powered Code Analysis</div>
         <h1 class="hero-title">Code Analysis</h1>
         <p class="hero-sub">
@@ -81,8 +75,7 @@
         </p>
       </section>
 
-      <!-- ── Top Settings Bar ── -->
-      <div class="topbar-settings glass-card" id="topbar-settings">
+            <div class="topbar-settings glass-card" id="topbar-settings">
         <div class="topbar-group">
           <div class="topbar-label">🌐 Language</div>
           <select id="lang-select" class="styled-select topbar-select">
@@ -123,8 +116,7 @@
         </div>
       </div>
 
-      <!-- ── Code Input Card ── -->
-      <div class="glass-card" id="input-card">
+            <div class="glass-card" id="input-card">
         <div class="section-title"><span class="icon">📋</span> Paste Your Code</div>
         <div class="section-divider"></div>
         <textarea
@@ -142,8 +134,7 @@
         </div>
       </div>
 
-      <!-- ── Action Buttons ── -->
-      <div class="btn-row">
+            <div class="btn-row">
         <button class="btn btn-primary" id="analyze-btn" disabled>
           <span class="btn-icon">🔮</span>
           <span id="analyze-label">Analyze Code</span>
@@ -151,8 +142,7 @@
         <button class="btn btn-ghost" id="clear-btn">🗑️ Clear</button>
       </div>
 
-      <!-- ── Banners ── -->
-      <div class="analyzing-banner" id="analyzing-banner" style="display:none">
+            <div class="analyzing-banner" id="analyzing-banner" style="display:none">
         <div class="pulse-ring"></div>
         <div class="analyzing-text">Analyzing your code...</div>
         <div class="analyzing-sub">Powered by Groq · llama-3.3-70b-versatile</div>
@@ -164,8 +154,7 @@
         ⚠️ Code truncated to 150 lines for analysis. Results based on first 150 lines.
       </div>
 
-      <!-- ── Results Area ── -->
-      <div id="results-area" style="display:none">
+            <div id="results-area" style="display:none">
         <div class="result-meta">
           <div class="lang-badge" id="result-lang-badge"></div>
           <span class="result-time" id="result-time"></span>
@@ -175,8 +164,7 @@
         <div id="tab-panels"></div>
       </div>
 
-      <!-- ── Empty State ── -->
-      <div class="glass-card empty-state" id="empty-state">
+            <div class="glass-card empty-state" id="empty-state">
         <div class="empty-icon">🔮</div>
         <div class="empty-title">Ready to Decode Any Code</div>
         <div class="empty-desc">
@@ -227,8 +215,7 @@
       </div>
     </div>
 
-    <!-- ── Footer ── -->
-    <footer class="footer">
+        <footer class="footer">
       <strong style="color:#6c63ff">CodeExplain</strong> — Project 4 · AI Engineer Launchpad ·
       Built with Flask &amp; Groq ·
       <span style="color:#00d4ff">Plain-English Code Tutor</span>
@@ -237,7 +224,6 @@
   </main>
 </div>
 
-<!-- ── Mobile sidebar toggle ── -->
 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">☰</button>
 
 <script src="/static/app.js"></script>

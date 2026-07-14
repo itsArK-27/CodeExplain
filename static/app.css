@@ -1,10 +1,5 @@
-/* ═══════════════════════════════════════════════════════════════
-   CodeExplain — Immersive Glassmorphism CSS (Flask edition)
-   ═══════════════════════════════════════════════════════════════ */
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 
-/* ── Root Variables ───────────────────────────────────────────── */
 :root {
   --bg-deep:        #050815;
   --bg-mid:         #080d1f;
@@ -29,7 +24,6 @@
   --transition:     cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* ── Reset ────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -43,7 +37,6 @@ html, body {
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
 ::-webkit-scrollbar-thumb { background: var(--accent-primary); border-radius: 3px; }
 
-/* ── Particle Canvas ──────────────────────────────────────────── */
 #particles-canvas {
   position: fixed;
   top: 0; left: 0;
@@ -52,7 +45,6 @@ html, body {
   pointer-events: none;
 }
 
-/* ── Orbs ─────────────────────────────────────────────────────── */
 .orb {
   position: fixed;
   border-radius: 50%;
@@ -65,7 +57,6 @@ html, body {
 .orb-2 { width:400px;height:400px;background:radial-gradient(circle,rgba(0,212,255,.12) 0%,transparent 70%);bottom:-100px;right:-100px;animation-delay:-6s; }
 .orb-3 { width:300px;height:300px;background:radial-gradient(circle,rgba(0,245,160,.10) 0%,transparent 70%);top:40%;left:60%;animation-delay:-3s; }
 
-/* ── App Shell ────────────────────────────────────────────────── */
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -73,7 +64,6 @@ html, body {
   z-index: 1;
 }
 
-/* ── Sidebar ──────────────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-w);
   min-height: 100vh;
@@ -147,7 +137,6 @@ html, body {
   border-top: 1px solid var(--glass-border);
 }
 
-/* ── Sidebar Collapse (Desktop) ── */
 body.sidebar-collapsed .sidebar {
   width: 0;
   min-width: 0;
@@ -163,7 +152,6 @@ body.sidebar-collapsed .sidebar-toggle {
   display: flex;
 }
 
-/* ── Toggle rows (checkbox) ───────────────────────────────────── */
 .toggle-row {
   display: flex;
   align-items: center;
@@ -217,7 +205,6 @@ body.sidebar-collapsed .sidebar-toggle {
   transform: translateX(16px);
 }
 
-/* ── Styled Select ────────────────────────────────────────────── */
 .styled-select {
   width: 100%;
   background: rgba(13,20,50,0.8);
@@ -242,7 +229,6 @@ body.sidebar-collapsed .sidebar-toggle {
   color: var(--text-primary);
 }
 
-/* ── Main Content ─────────────────────────────────────────────── */
 .main-content {
   flex: 1;
   max-width: 1000px;
@@ -251,7 +237,6 @@ body.sidebar-collapsed .sidebar-toggle {
   width: 100%;
 }
 
-/* ── Hero ─────────────────────────────────────────────────────── */
 .hero-section {
   text-align: center;
   padding: 3rem 2rem 2rem;
@@ -290,7 +275,6 @@ body.sidebar-collapsed .sidebar-toggle {
   animation: fadeSlideDown 1s var(--transition) 0.2s both;
 }
 
-/* ── Glass Card ───────────────────────────────────────────────── */
 .glass-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -321,7 +305,6 @@ body.sidebar-collapsed .sidebar-toggle {
   box-shadow: var(--shadow-card), var(--shadow-glow), inset 0 1px 0 var(--glass-shine);
 }
 
-/* ── Section Titles ───────────────────────────────────────────── */
 .section-title {
   font-size: 1.25rem;
   font-weight: 700;
@@ -339,7 +322,6 @@ body.sidebar-collapsed .sidebar-toggle {
   opacity: 0.5;
 }
 
-/* ── Code Textarea ────────────────────────────────────────────── */
 .code-textarea {
   width: 100%;
   min-height: 280px;
@@ -362,7 +344,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 .code-textarea::placeholder { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
 
-/* ── Stats Bar ────────────────────────────────────────────────── */
 .stats-bar {
   display: flex;
   gap: 0.8rem;
@@ -384,7 +365,6 @@ body.sidebar-collapsed .sidebar-toggle {
 .stat-chip:hover { background: rgba(108,99,255,0.2); color: var(--text-primary); }
 .stat-val { font-weight: 700; color: var(--accent-sec); }
 
-/* ── Buttons ──────────────────────────────────────────────────── */
 .btn-row {
   display: flex;
   gap: 0.8rem;
@@ -445,7 +425,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 .btn-ghost:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
 
-/* ── Banners ──────────────────────────────────────────────────── */
 .analyzing-banner {
   text-align: center;
   padding: 2rem;
@@ -484,7 +463,6 @@ body.sidebar-collapsed .sidebar-toggle {
   margin-bottom: 1.2rem;
 }
 
-/* ── Result Meta ──────────────────────────────────────────────── */
 .result-meta {
   display: flex;
   align-items: center;
@@ -505,7 +483,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 .result-time { font-size: 0.82rem; color: var(--text-dim); }
 
-/* ── Tabs ─────────────────────────────────────────────────────── */
 .tabs-bar {
   display: flex;
   gap: 4px;
@@ -539,7 +516,6 @@ body.sidebar-collapsed .sidebar-toggle {
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ── Explanation ──────────────────────────────────────────────── */
 .explanation-text {
   font-size: 1rem;
   line-height: 1.85;
@@ -568,7 +544,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 .download-btn:hover { background: rgba(108,99,255,0.3); }
 
-/* ── Complexity ───────────────────────────────────────────────── */
 .complexity-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -628,7 +603,6 @@ body.sidebar-collapsed .sidebar-toggle {
   line-height: 1.7;
 }
 
-/* ── Line-by-Line ─────────────────────────────────────────────── */
 .lbl-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -672,7 +646,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 .line-comment-text { font-size: 0.92rem; color: var(--text-primary); line-height: 1.6; padding-top: 2px; }
 
-/* ── Improvements ─────────────────────────────────────────────── */
 .improvement-card {
   background: rgba(0,0,0,0.25);
   border: 1px solid rgba(255,169,49,0.2);
@@ -709,7 +682,6 @@ body.sidebar-collapsed .sidebar-toggle {
   margin-top: 0.6rem;
 }
 
-/* ── Quiz ─────────────────────────────────────────────────────── */
 .quiz-header {
   text-align: center;
   padding: 1.5rem;
@@ -779,7 +751,6 @@ body.sidebar-collapsed .sidebar-toggle {
 .score-pct { font-size: 1.2rem; color: var(--accent-green); font-weight: 700; margin: 0.3rem 0; }
 .score-msg { font-size: 0.95rem; color: var(--text-sec); margin-top: 0.5rem; }
 
-/* ── Empty State ──────────────────────────────────────────────── */
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
@@ -790,7 +761,6 @@ body.sidebar-collapsed .sidebar-toggle {
 .empty-desc { color: var(--text-sec); font-size: 0.95rem; line-height: 1.8; max-width: 500px; margin: 0 auto 1.5rem; }
 .empty-langs { color: var(--text-dim); font-size: 0.82rem; }
 
-/* ── Footer ───────────────────────────────────────────────────── */
 .footer {
   text-align: center;
   padding: 2rem;
@@ -800,7 +770,6 @@ body.sidebar-collapsed .sidebar-toggle {
   font-size: 0.82rem;
 }
 
-/* ── Mobile sidebar toggle ────────────────────────────────────── */
 .sidebar-toggle {
   display: none;
   position: fixed;
@@ -831,7 +800,6 @@ body.sidebar-collapsed .sidebar-toggle {
   .main-content { padding: 1rem 1rem 3rem; }
 }
 
-/* ── Animations ───────────────────────────────────────────────── */
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-20px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -854,7 +822,6 @@ body.sidebar-collapsed .sidebar-toggle {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Interactive Code View ────────────────────────────────────── */
 .interactive-code-view {
   background: rgba(0, 0, 0, 0.4);
   border-radius: var(--radius-sm);
@@ -911,7 +878,6 @@ body.sidebar-collapsed .sidebar-toggle {
   margin-right: 0.5rem;
 }
 
-/* ── Navigation Menu ──────────────────────────────────────────── */
 .nav-menu {
   display: flex;
   flex-direction: column;
@@ -948,7 +914,6 @@ body.sidebar-collapsed .sidebar-toggle {
   font-size: 1.1rem;
 }
 
-/* ── Top Settings Bar ─────────────────────────────────────────── */
 .topbar-settings {
   display: flex;
   flex-wrap: wrap;
@@ -985,7 +950,6 @@ body.sidebar-collapsed .sidebar-toggle {
   align-items: center;
 }
 
-/* ── View Containers ──────────────────────────────────────────── */
 .view-container {
   display: none;
   animation: fadeSlideDown 0.4s var(--transition) both;
@@ -994,7 +958,6 @@ body.sidebar-collapsed .sidebar-toggle {
   display: block;
 }
 
-/* ── CodeMirror Customization ── */
 .CodeMirror {
   border-radius: 12px;
   font-family: 'JetBrains Mono', monospace;
@@ -1015,7 +978,6 @@ body.sidebar-collapsed .sidebar-toggle {
   color: var(--text-sec) !important;
 }
 
-/* ── Copy Button ── */
 .copy-btn {
   position: absolute;
   top: 10px;

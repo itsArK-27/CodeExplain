@@ -1,6 +1,3 @@
-"""
-utils.py — Helper utilities for CodeExplain
-"""
 
 import re
 

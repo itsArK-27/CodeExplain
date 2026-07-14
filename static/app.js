@@ -1,11 +1,5 @@
-/* ═══════════════════════════════════════════════════════════════
-   CodeExplain — Frontend App Logic
-   Communicates with Flask backend via REST API.
-   ═══════════════════════════════════════════════════════════════ */
-
 "use strict";
 
-// ── State ──────────────────────────────────────────────────────────────────────
 const state = {
   results: null,
   quizQuestions: [],
@@ -17,7 +11,6 @@ const state = {
   samples: {},
 };
 
-// ── DOM refs ───────────────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 
 const codeInput     = $("code-input");
@@ -54,7 +47,6 @@ const opts = {
   improvements: $("opt-improvements"),
 };
 
-// ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
   await loadMeta();
   setupEditor();
@@ -85,7 +77,6 @@ function setCode(val) {
 }
 
 
-// ── Load API metadata (languages + samples) ────────────────────────────────────
 async function loadMeta() {
   try {
     const res = await fetch("/api/meta");
@@ -112,7 +103,6 @@ async function loadMeta() {
   }
 }
 
-// ── Event Listeners ────────────────────────────────────────────────────────────
 function setupEventListeners() {
   
   langSelect.addEventListener("change", () => {
@@ -191,7 +181,6 @@ function setupEventListeners() {
   });
 }
 
-// ── Stats Bar ──────────────────────────────────────────────────────────────────
 function updateStats() {
   const code = getCode();
   const lines = code.split("\n").length;
@@ -211,7 +200,6 @@ function updateStats() {
   }
 }
 
-// ── Analysis ───────────────────────────────────────────────────────────────────
 async function runAnalysis() {
   hideError();
   warnBanner.style.display = "none";
@@ -428,7 +416,6 @@ function renderTabsComplete(data) {
 }
 
 
-// ── Quiz ───────────────────────────────────────────────────────────────────────
 async function runQuiz() {
   if (!state.results) return;
 
@@ -478,8 +465,6 @@ async function runQuiz() {
   }
 }
 
-// ── Render Results ─────────────────────────────────────────────────────────────
-// ── Tab Renderers ──────────────────────────────────────────────────────────────
 function renderExplanation(data) {
   const text = data.explanation || "";
   return `
@@ -785,7 +770,6 @@ function renderScoreCard(score, total) {
     </div>`;
 }
 
-// ── Clear ──────────────────────────────────────────────────────────────────────
 function clearAll() {
   setCode("");
   sampleSelect.value = "";
@@ -804,7 +788,6 @@ function clearAll() {
   updateStats();
 }
 
-// ── Error ──────────────────────────────────────────────────────────────────────
 function showError(msg) {
   errorBanner.style.display = "block";
   errorMsg.textContent = msg;
@@ -814,7 +797,6 @@ function hideError() {
   errorMsg.textContent = "";
 }
 
-// ── HTML Escape ────────────────────────────────────────────────────────────────
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -824,7 +806,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-// ── Particle System ────────────────────────────────────────────────────────────
 function setupParticles() {
   const canvas = $("particles-canvas");
   if (!canvas) return;
@@ -891,7 +872,6 @@ function setupParticles() {
   animate();
 }
 
-// ── Mouse Parallax + Ripple ────────────────────────────────────────────────────
 function setupMouseEffects() {
   document.addEventListener("mousemove", (e) => {
     const W = window.innerWidth, H = window.innerHeight;
@@ -940,7 +920,6 @@ function setupMouseEffects() {
   document.head.appendChild(style);
 }
 
-// ── Download Results ───────────────────────────────────────────────────────────
 function downloadResults() {
   if (!state.results) return;
 
@@ -999,5 +978,4 @@ function downloadResults() {
   URL.revokeObjectURL(url);
 }
 
-// ── Boot ───────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", init);

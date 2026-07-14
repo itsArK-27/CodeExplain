@@ -1,6 +1,4 @@
-"""
-quiz_engine.py — Quiz logic for CodeExplain (no UI framework dependency)
-"""
+
 
 
 def calculate_score(questions: list[dict], answers: dict) -> tuple[int, int]:

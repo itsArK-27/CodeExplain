@@ -1,7 +1,4 @@
-"""
-server.py — CodeExplain Flask Backend
-Replaces Streamlit entirely. Serves the HTML UI and provides REST API endpoints.
-"""
+
 
 import os
 import json
@@ -20,14 +17,14 @@ from utils import (
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 
-# ── Serve the single-page app ──────────────────────────────────────────────────
+
 
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
 
 
-# ── API: Analyze Code ──────────────────────────────────────────────────────────
+
 
 @app.route("/api/analyze", methods=["POST"])
 def api_analyze():
@@ -67,7 +64,7 @@ def api_analyze():
             
     from flask import Response
     return Response(generate(), mimetype="text/event-stream")
-# ── API: Generate Quiz ─────────────────────────────────────────────────────────
+
 
 @app.route("/api/quiz", methods=["POST"])
 def api_quiz():
@@ -87,7 +84,7 @@ def api_quiz():
         return jsonify({"error": str(e)}), 500
 
 
-# ── API: Metadata ──────────────────────────────────────────────────────────────
+
 
 @app.route("/api/meta")
 def api_meta():

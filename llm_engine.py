@@ -1,7 +1,4 @@
-"""
-llm_engine.py — Groq API integration for CodeExplain
-Uses the groq SDK with JSON mode and Pydantic schema validation.
-"""
+
 
 import os
 import json
@@ -17,7 +14,7 @@ from prompts import (
 load_dotenv()
 
 
-# ─── Pydantic Models for Structured Output ────────────────────────────────────
+
 
 class LineComment(BaseModel):
     line: str = Field(description="The line number or block")
@@ -72,7 +69,7 @@ class Quiz(BaseModel):
     questions: list[QuizQuestion]
 
 
-# ─── API Client ───────────────────────────────────────────────────────────────
+
 
 def _get_client() -> Groq:
     api_key = os.getenv("GROQ_API_KEY")
