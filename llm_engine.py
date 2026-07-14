@@ -34,9 +34,9 @@ class Complexity(BaseModel):
     time_explanation: str = Field(description="1-2 sentence explanation of time complexity")
     space: str = Field(description="Big-O notation for space complexity")
     space_explanation: str = Field(description="1-2 sentence explanation of space complexity")
-    best: str = Field(description="Big-O notation and brief reason for best case")
-    worst: str = Field(description="Big-O notation and brief reason for worst case")
-    average: str = Field(description="Big-O notation and brief reason for average case")
+    best: str = Field(description="Detailed explanation of best-case time complexity, including Big-O notation, why it occurs, and an example scenario")
+    worst: str = Field(description="Detailed explanation of worst-case time complexity, including Big-O notation, why it occurs, and an example scenario")
+    average: str = Field(description="Detailed explanation of average-case time complexity, including Big-O notation, why it occurs, and an example scenario")
     summary: str = Field(description="1 paragraph layman summary of what this complexity means in practice")
 
 class FullAnalysis(BaseModel):

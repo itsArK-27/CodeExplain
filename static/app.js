@@ -112,6 +112,30 @@ function setupEventListeners() {
     sidebarEl.classList.toggle("open");
   });
 
+  // Navigation View Switching
+  const navItems = document.querySelectorAll(".nav-item");
+  const views = document.querySelectorAll(".view-container");
+  navItems.forEach(item => {
+    item.addEventListener("click", () => {
+      navItems.forEach(n => n.classList.remove("active"));
+      item.classList.add("active");
+      const targetView = item.dataset.view;
+      views.forEach(v => {
+        if (v.id === targetView) {
+          v.style.display = "block";
+          v.classList.add("active-view");
+        } else {
+          v.style.display = "none";
+          v.classList.remove("active-view");
+        }
+      });
+      // On mobile, close sidebar after nav
+      if (window.innerWidth <= 768) {
+        sidebarEl.classList.remove("open");
+      }
+    });
+  });
+
   // Close sidebar on outside click (mobile)
   document.addEventListener("click", (e) => {
     if (window.innerWidth <= 768 &&
@@ -231,16 +255,21 @@ async function runQuiz() {
     state.quizSubmitted = false;
     state.quizScore = 0;
 
-    // Re-render results adding/refreshing quiz tab
-    renderResults(state.results);
-    // Auto-switch to quiz tab
-    const quizTabBtn = document.querySelector(".tab-btn[data-tab='quiz']");
-    if (quizTabBtn) quizTabBtn.click();
+    // Render quiz in the dedicated quiz view area
+    const quizContainer = $("quiz-area-container");
+    if (quizContainer) {
+      quizContainer.innerHTML = renderQuiz();
+      wireQuizInteraction();
+    }
+    
+    // Auto-switch to quiz view
+    const quizNavBtn = document.querySelector(".nav-item[data-view='quiz-view']");
+    if (quizNavBtn) quizNavBtn.click();
   } catch (e) {
     showError("❌ Quiz error: " + e.message);
   } finally {
     quizBtn.disabled = false;
-    quizBtn.textContent = state.quizQuestions.length ? "🔄 New Quiz" : "🧠 Generate Quiz";
+    quizBtn.textContent = state.quizQuestions.length ? "🔄 Generate New Quiz" : "🧠 Generate Quiz from Last Analysis";
   }
 }
 
@@ -259,7 +288,6 @@ function renderResults(data) {
   if (data.complexity !== undefined)   tabs.push({ id: "complexity",   label: "⏱️ Complexity" });
   if (data.lines !== undefined)        tabs.push({ id: "lines",        label: "📝 Line-by-Line" });
   if (data.improvements !== undefined) tabs.push({ id: "improvements", label: "🚀 Improvements" });
-  if (state.quizQuestions.length)      tabs.push({ id: "quiz",         label: "🧠 Quiz" });
 
   tabsBar.innerHTML = tabs.map((t, i) =>
     `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`
@@ -276,7 +304,6 @@ function renderResults(data) {
     else if (t.id === "complexity") panel.innerHTML = renderComplexity(data.complexity);
     else if (t.id === "lines") panel.innerHTML = renderLines(data);
     else if (t.id === "improvements") panel.innerHTML = renderImprovements(data.improvements);
-    else if (t.id === "quiz") panel.innerHTML = renderQuiz();
 
     tabPanels.appendChild(panel);
   });
@@ -291,9 +318,10 @@ function renderResults(data) {
     });
   });
 
-  // Wire up quiz interaction after render
-  if (state.quizQuestions.length) {
-    wireQuizInteraction();
+  // Switch to analyze view if not already there
+  const analyzeNavBtn = document.querySelector(".nav-item[data-view='analyze-view']");
+  if (analyzeNavBtn && !analyzeNavBtn.classList.contains("active")) {
+    analyzeNavBtn.click();
   }
 }
 
@@ -333,7 +361,7 @@ function renderComplexity(cx) {
   const caseRows = cases.map(c => {
     const val = cx[c.key];
     if (!val || val === "N/A") return "";
-    return `<div class="case-row"><span class="case-label">${c.emoji} ${c.label}</span><span class="case-val">${escapeHtml(val)}</span></div>`;
+    return `<div class="case-row" style="flex-direction:column; align-items:flex-start; gap:0.5rem;"><div class="case-label" style="font-weight:700; color:var(--text-primary); margin-bottom:0.2rem;">${c.emoji} ${c.label}</div><div class="case-val" style="font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:400; color:var(--text-sec); line-height:1.6; white-space:pre-wrap;">${escapeHtml(val)}</div></div>`;
   }).join("");
   const summary = cx.summary ? `<div class="in-practice"><strong style="color:#00d4ff">📊 In Practice:</strong> ${escapeHtml(cx.summary)}</div>` : "";
   return `
@@ -592,7 +620,8 @@ function clearAll() {
   warnBanner.style.display = "none";
   hideError();
   quizBtn.disabled = true;
-  quizBtn.textContent = "🧠 Generate Quiz";
+  quizBtn.textContent = "🧠 Generate Quiz from Last Analysis";
+  $("quiz-area-container").innerHTML = "";
   updateStats();
 }
 
