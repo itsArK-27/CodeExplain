@@ -108,8 +108,19 @@ function setupEventListeners() {
   clearBtn.addEventListener("click", clearAll);
   quizBtn.addEventListener("click", runQuiz);
 
+  const desktopCollapseBtn = $("desktop-collapse-btn");
+  if (desktopCollapseBtn) {
+    desktopCollapseBtn.addEventListener("click", () => {
+      document.body.classList.add("sidebar-collapsed");
+    });
+  }
+
   sidebarToggle.addEventListener("click", () => {
-    sidebarEl.classList.toggle("open");
+    if (window.innerWidth <= 768) {
+      sidebarEl.classList.toggle("open");
+    } else {
+      document.body.classList.remove("sidebar-collapsed");
+    }
   });
 
   // Navigation View Switching

@@ -37,7 +37,6 @@ html, body {
   color: var(--text-primary);
   font-family: 'Outfit', sans-serif;
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 ::-webkit-scrollbar { width: 6px; }
@@ -148,6 +147,22 @@ html, body {
   border-top: 1px solid var(--glass-border);
 }
 
+/* ── Sidebar Collapse (Desktop) ── */
+body.sidebar-collapsed .sidebar {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  border-right: none;
+  overflow: hidden;
+}
+body.sidebar-collapsed .sidebar * {
+  opacity: 0;
+  pointer-events: none;
+}
+body.sidebar-collapsed .sidebar-toggle {
+  display: flex;
+}
+
 /* ── Toggle rows (checkbox) ───────────────────────────────────── */
 .toggle-row {
   display: flex;
@@ -158,6 +173,25 @@ html, body {
   font-size: 0.88rem;
   color: var(--text-primary);
   user-select: none;
+  position: relative;
+}
+.toggle-row[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  pointer-events: none;
+  z-index: 10;
+  margin-bottom: 6px;
 }
 .toggle-row input[type="checkbox"] { display: none; }
 .toggle-track {
@@ -203,6 +237,10 @@ html, body {
   padding-right: 2.2rem;
 }
 .styled-select:focus { border-color: var(--accent-primary); }
+.styled-select option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
 
 /* ── Main Content ─────────────────────────────────────────────── */
 .main-content {

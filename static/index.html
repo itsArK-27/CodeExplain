@@ -23,7 +23,8 @@
 
   <!-- ── Left Navigation Panel ── -->
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
+    <div class="sidebar-logo" style="position: relative;">
+      <button id="desktop-collapse-btn" style="position: absolute; right: 10px; top: 10px; background: none; border: none; color: var(--text-sec); cursor: pointer; font-size: 1.2rem;" title="Collapse Sidebar">◀</button>
       <span class="logo-icon">🔮</span>
       <div class="logo-text">CodeExplain</div>
       <div class="logo-sub">Plain-English Code Tutor</div>
@@ -53,48 +54,6 @@
   <!-- ── Main Content ── -->
   <main class="main-content">
 
-    <!-- ── Top Settings Bar ── -->
-    <div class="topbar-settings glass-card" id="topbar-settings">
-      <div class="topbar-group">
-        <div class="topbar-label">🌐 Language</div>
-        <select id="lang-select" class="styled-select topbar-select">
-          <option value="Auto-detect">Auto-detect</option>
-        </select>
-      </div>
-
-      <div class="topbar-group">
-        <div class="topbar-label">🗣️ Response</div>
-        <select id="response-lang-select" class="styled-select topbar-select">
-          <option value="English">English</option>
-          <option value="Spanish">Spanish</option>
-          <option value="French">French</option>
-          <option value="German">German</option>
-          <option value="Chinese">Chinese</option>
-          <option value="Japanese">Japanese</option>
-          <option value="Korean">Korean</option>
-          <option value="Hindi">Hindi</option>
-          <option value="Portuguese">Portuguese</option>
-        </select>
-      </div>
-
-      <div class="topbar-group options-group">
-        <div class="topbar-label">🎛️ Analysis Options</div>
-        <div class="toggles-container">
-          <label class="toggle-row"><input type="checkbox" id="opt-explanation" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>💬</span></label>
-          <label class="toggle-row"><input type="checkbox" id="opt-complexity" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>⏱️</span></label>
-          <label class="toggle-row"><input type="checkbox" id="opt-lines" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>📝</span></label>
-          <label class="toggle-row"><input type="checkbox" id="opt-improvements" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>🚀</span></label>
-        </div>
-      </div>
-
-      <div class="topbar-group">
-        <div class="topbar-label">📦 Sample</div>
-        <select id="sample-select" class="styled-select topbar-select">
-          <option value="">— Select Sample —</option>
-        </select>
-      </div>
-    </div>
-
     <!-- ── View Containers ── -->
     
     <!-- Analyze View -->
@@ -108,6 +67,48 @@
           detailed complexity analysis, line-by-line commentary, and smart improvement suggestions.
         </p>
       </section>
+
+      <!-- ── Top Settings Bar ── -->
+      <div class="topbar-settings glass-card" id="topbar-settings">
+        <div class="topbar-group">
+          <div class="topbar-label">🌐 Language</div>
+          <select id="lang-select" class="styled-select topbar-select">
+            <option value="Auto-detect">Auto-detect</option>
+          </select>
+        </div>
+
+        <div class="topbar-group">
+          <div class="topbar-label">🗣️ Response</div>
+          <select id="response-lang-select" class="styled-select topbar-select">
+            <option value="English">English</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Chinese">Chinese</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Korean">Korean</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Portuguese">Portuguese</option>
+          </select>
+        </div>
+
+        <div class="topbar-group options-group">
+          <div class="topbar-label">🎛️ Analysis Options</div>
+          <div class="toggles-container">
+            <label class="toggle-row" data-tooltip="Explanation"><input type="checkbox" id="opt-explanation" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>💬</span></label>
+            <label class="toggle-row" data-tooltip="Complexity"><input type="checkbox" id="opt-complexity" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>⏱️</span></label>
+            <label class="toggle-row" data-tooltip="Line-by-Line"><input type="checkbox" id="opt-lines" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>📝</span></label>
+            <label class="toggle-row" data-tooltip="Improvements"><input type="checkbox" id="opt-improvements" checked /><span class="toggle-track"><span class="toggle-thumb"></span></span><span>🚀</span></label>
+          </div>
+        </div>
+
+        <div class="topbar-group">
+          <div class="topbar-label">📦 Sample</div>
+          <select id="sample-select" class="styled-select topbar-select">
+            <option value="">— Select Sample —</option>
+          </select>
+        </div>
+      </div>
 
       <!-- ── Code Input Card ── -->
       <div class="glass-card" id="input-card">
