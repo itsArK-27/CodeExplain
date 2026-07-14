@@ -1,6 +1,8 @@
 # 🔮 CodeExplain — Plain-English Code Tutor
 
 > **Project 4** from the AI Engineer Launchpad · Built with Python, Flask & Groq API
+> 
+> 🔗 **Live Demo:** [https://codeexplain-l00c.onrender.com/](https://codeexplain-l00c.onrender.com/)
 
 ---
 
@@ -13,6 +15,7 @@
 | 📝 **Line-by-Line Commentary** | Every line explained in plain English |
 | 🚀 **Smart Improvements** | Actionable suggestions for cleaner, faster code |
 | 🧠 **Quiz Mode** | Auto-generated comprehension questions with scoring |
+| 📥 **Markdown Export** | Download your full analysis as a Markdown file |
 | 🌐 **Multi-Language** | Python, JavaScript, Java, C++, Go, Rust, and more |
 
 ## 🎨 UI Highlights
@@ -28,7 +31,11 @@
 
 ### 1. Install Dependencies
 ```bash
-cd self/CodeExplain
+# Clone the repository
+git clone https://github.com/itsArK-27/CodeExplain.git
+cd CodeExplain
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -76,7 +83,7 @@ CodeExplain/
 1. **✅ Multi-language support** — Explains snippets in Python, JavaScript, Java, C++, Go, Rust, and more with accurate Big-O complexity analysis.
 2. **✅ Structured consistent output** — Four clearly separated sections (Explanation / Complexity / Line-by-Line / Improvements) stay consistent across any input.
 3. **✅ Quiz Mode** — Generates 5 comprehension questions (MCQ + True/False) with scoring, feedback, and retake option.
-4. **✅ SSE Streaming & Code Copying** — Stream responses live and copy code or explanations easily via copy-to-clipboard buttons.
+4. **✅ SSE Streaming, Code Copying & Markdown Export** — Stream responses live, copy code easily, and download the full analysis as a Markdown file.
 5. **✅ Rich Syntax Editing & Highlighting** — Live coding via CodeMirror editor and rendered code highlighting using Highlight.js.
 
 ---
