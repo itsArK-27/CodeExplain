@@ -981,3 +981,65 @@ body.sidebar-collapsed .sidebar-toggle {
 .view-container.active-view {
   display: block;
 }
+
+/* ── CodeMirror Customization ── */
+.CodeMirror {
+  border-radius: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  height: auto;
+  min-height: 200px;
+  background: rgba(15, 15, 20, 0.4) !important;
+  border: 1px solid var(--glass-border);
+}
+.CodeMirror-scroll {
+  min-height: 200px;
+}
+.CodeMirror-gutters {
+  background: transparent !important;
+  border-right: 1px solid var(--glass-border) !important;
+}
+.CodeMirror-linenumber {
+  color: var(--text-sec) !important;
+}
+
+/* ── Copy Button ── */
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+.copy-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+.relative-container {
+  position: relative;
+}
+
+/* VS Code Dark Modern Theme for CodeMirror */
+.cm-s-vscode-dark-modern.CodeMirror { background: #1f1f1f; color: #cccccc; }
+.cm-s-vscode-dark-modern .CodeMirror-gutters { background: #1f1f1f; border-right: 1px solid #2b2d30; }
+.cm-s-vscode-dark-modern .cm-keyword { color: #569cd6; } 
+.cm-s-vscode-dark-modern .cm-string { color: #ce9178; }  
+.cm-s-vscode-dark-modern .cm-string-2 { color: #ce9178; }  
+.cm-s-vscode-dark-modern .cm-def { color: #dcdcaa; }     
+.cm-s-vscode-dark-modern .cm-comment { color: #6a9955; } 
+.cm-s-vscode-dark-modern .cm-variable { color: #9cdcfe; }
+.cm-s-vscode-dark-modern .cm-variable-2 { color: #9cdcfe; }
+.cm-s-vscode-dark-modern .cm-variable-3 { color: #9cdcfe; }
+.cm-s-vscode-dark-modern .cm-property { color: #9cdcfe; }
+.cm-s-vscode-dark-modern .cm-number { color: #b5cea8; }
+.cm-s-vscode-dark-modern .cm-operator { color: #d4d4d4; }
+.cm-s-vscode-dark-modern .cm-meta { color: #569cd6; }
+.cm-s-vscode-dark-modern .cm-builtin { color: #4ec9b0; }
+.cm-s-vscode-dark-modern .CodeMirror-cursor { border-left: 2px solid #ffffff; }
+.cm-s-vscode-dark-modern .CodeMirror-selected { background: #264f78; }
+.cm-s-vscode-dark-modern .CodeMirror-line::selection, .cm-s-vscode-dark-modern .CodeMirror-line > span::selection, .cm-s-vscode-dark-modern .CodeMirror-line > span > span::selection { background: rgba(38, 79, 120, 0.99); }

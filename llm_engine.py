@@ -5,7 +5,7 @@ Uses the groq SDK with JSON mode and Pydantic schema validation.
 
 import os
 import json
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 from groq import Groq
 from dotenv import load_dotenv
 from prompts import (
@@ -39,11 +39,21 @@ class Complexity(BaseModel):
     average: str = Field(description="Detailed explanation of average-case time complexity, including Big-O notation, why it occurs, and an example scenario")
     summary: str = Field(description="1 paragraph layman summary of what this complexity means in practice")
 
-class FullAnalysis(BaseModel):
-    explanation: str = Field(description="Clear, friendly 1-2 sentence explanation of the code, concisely")
-    complexity: Complexity = Field(description="Time and space complexity analysis")
-    lines: list[LineComment] = Field(description="Line-by-line commentary")
-    improvements: list[Improvement] = Field(description="List of suggested improvements")
+def get_analysis_model(options: dict = None):
+    if options is None:
+        options = {"explanation": True, "complexity": True, "lines": True, "improvements": True}
+        
+    fields = {}
+    if options.get("explanation"):
+        fields["explanation"] = (str, Field(description="Clear, friendly 1-2 sentence explanation of the code, concisely"))
+    if options.get("complexity"):
+        fields["complexity"] = (Complexity, Field(description="Time and space complexity analysis"))
+    if options.get("lines"):
+        fields["lines"] = (list[LineComment], Field(description="Line-by-line commentary"))
+    if options.get("improvements"):
+        fields["improvements"] = (list[Improvement], Field(description="List of suggested improvements"))
+        
+    return create_model('DynamicAnalysis', **fields)
 
 class QuizOption(BaseModel):
     A: str
@@ -73,13 +83,14 @@ def _get_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-def analyze_all(code: str, language: str, response_language: str = "English") -> dict:
+def analyze_all(code: str, language: str, response_language: str = "English", options: dict = None) -> dict:
     """Make a single LLM call to get all analysis components to bypass rate limits."""
     client = _get_client()
     
     # Inject JSON schema into prompt
-    schema = json.dumps(FullAnalysis.model_json_schema(), indent=2)
-    prompt = get_full_analysis_prompt(code, language, response_language).replace("{json_schema}", schema)
+    DynamicAnalysis = get_analysis_model(options)
+    schema = json.dumps(DynamicAnalysis.model_json_schema(), indent=2)
+    prompt = get_full_analysis_prompt(code, language, response_language, options).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -98,7 +109,7 @@ def analyze_all(code: str, language: str, response_language: str = "English") ->
         
     try:
         # Validate through Pydantic
-        parsed_data = FullAnalysis.model_validate_json(content)
+        parsed_data = DynamicAnalysis.model_validate_json(content)
         return parsed_data.model_dump()
     except Exception as e:
         raise ValueError(f"Failed to parse LLM structured output: {e}")
@@ -131,3 +142,49 @@ def generate_quiz(code: str, language: str, explanation: str, response_language:
         return parsed_data.model_dump().get("questions", [])
     except Exception:
         return []
+
+
+def analyze_stream(code: str, language: str, response_language: str = "English", options: dict = None):
+    """Make a single LLM call, stream the explanation field, and yield the final parsed JSON."""
+    import re
+    client = _get_client()
+    
+    DynamicAnalysis = get_analysis_model(options)
+    schema = json.dumps(DynamicAnalysis.model_json_schema(), indent=2)
+    prompt = get_full_analysis_prompt(code, language, response_language, options).replace("{json_schema}", schema)
+    
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=2048,
+        response_format={"type": "json_object"},
+        stream=True
+    )
+    
+    full_content = ""
+    last_yielded_len = 0
+    
+    for chunk in response:
+        delta = chunk.choices[0].delta.content or ""
+        full_content += delta
+        
+        if options and options.get("explanation"):
+            match = re.search(r'"explanation"\s*:\s*"((?:[^"\\\\]|\\\\.)*)', full_content, re.DOTALL)
+            if match:
+                current_explanation = match.group(1)
+                # basic unescape
+                current_explanation = current_explanation.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\')
+                if len(current_explanation) > last_yielded_len:
+                    new_text = current_explanation[last_yielded_len:]
+                    yield {"type": "explanation_chunk", "text": new_text}
+                    last_yielded_len = len(current_explanation)
+                
+    try:
+        parsed_data = DynamicAnalysis.model_validate_json(full_content)
+        yield {"type": "complete", "data": parsed_data.model_dump()}
+    except Exception as e:
+        yield {"type": "error", "error": f"Failed to parse output: {e}"}

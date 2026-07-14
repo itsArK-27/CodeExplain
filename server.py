@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our engine modules (same as before — these haven't changed)
-from llm_engine import analyze_all, generate_quiz
+from llm_engine import analyze_all, generate_quiz, analyze_stream
 from utils import (
     detect_language, validate_code_input, truncate_code,
     get_sample_snippets, get_language_icon, SUPPORTED_LANGUAGES
@@ -40,10 +40,8 @@ def api_analyze():
         "lines": True,
         "improvements": True,
     })
-
     response_language = data.get("response_language", "English")
 
-    # Validate
     valid, err = validate_code_input(code)
     if not valid:
         return jsonify({"error": err}), 400
@@ -51,36 +49,24 @@ def api_analyze():
     if not os.getenv("GROQ_API_KEY"):
         return jsonify({"error": "❌ GROQ_API_KEY not set in .env file."}), 500
 
-    # Language detection
     if language == "Auto-detect":
         language = detect_language(code)
 
-    # Truncate if needed
     trimmed, was_truncated = truncate_code(code)
 
-    try:
-        full = analyze_all(trimmed, language, response_language)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-    result = {
-        "code": trimmed,
-        "language": language,
-        "language_icon": get_language_icon(language),
-        "truncated": was_truncated,
-    }
-    if options.get("explanation"):
-        result["explanation"] = full.get("explanation", "")
-    if options.get("complexity"):
-        result["complexity"] = full.get("complexity", {})
-    if options.get("lines"):
-        result["lines"] = full.get("lines", [])
-    if options.get("improvements"):
-        result["improvements"] = full.get("improvements", [])
-
-    return jsonify(result)
-
-
+    def generate():
+        import json
+        yield f"data: {json.dumps({'type': 'meta', 'language': language, 'language_icon': get_language_icon(language), 'truncated': was_truncated})}\\n\\n"
+        
+        try:
+            stream = analyze_stream(trimmed, language, response_language, options)
+            for chunk in stream:
+                yield f"data: {json.dumps(chunk)}\\n\\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\\n\\n"
+            
+    from flask import Response
+    return Response(generate(), mimetype="text/event-stream")
 # ── API: Generate Quiz ─────────────────────────────────────────────────────────
 
 @app.route("/api/quiz", methods=["POST"])

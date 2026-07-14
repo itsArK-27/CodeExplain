@@ -21,6 +21,7 @@ const state = {
 const $ = (id) => document.getElementById(id);
 
 const codeInput     = $("code-input");
+let editor = null;
 const analyzeBtn    = $("analyze-btn");
 const analyzeLabel  = $("analyze-label");
 const quizBtn       = $("quiz-btn");
@@ -55,11 +56,33 @@ const opts = {
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
   await loadMeta();
+  setupEditor();
   setupParticles();
   setupMouseEffects();
   setupEventListeners();
   updateStats();
 }
+
+function setupEditor() {
+  editor = CodeMirror.fromTextArea(codeInput, {
+    mode: "python",
+    theme: "vscode-dark-modern",
+    lineNumbers: true,
+    indentUnit: 4,
+    lineWrapping: true,
+  });
+  editor.on("change", updateStats);
+}
+
+function getCode() {
+  return editor ? editor.getValue() : codeInput.value;
+}
+
+function setCode(val) {
+  if (editor) editor.setValue(val);
+  else codeInput.value = val;
+}
+
 
 // ── Load API metadata (languages + samples) ────────────────────────────────────
 async function loadMeta() {
@@ -90,16 +113,24 @@ async function loadMeta() {
 
 // ── Event Listeners ────────────────────────────────────────────────────────────
 function setupEventListeners() {
-  codeInput.addEventListener("input", updateStats);
+  
   langSelect.addEventListener("change", () => {
     state.language = langSelect.value;
+    if (editor) {
+      let mode = "javascript";
+      const val = state.language.toLowerCase();
+      if (val.includes("python")) mode = "python";
+      else if (val.includes("java") || val.includes("c") || val.includes("go") || val.includes("rust")) mode = "clike";
+      else if (val.includes("html") || val.includes("xml")) mode = "xml";
+      editor.setOption("mode", mode);
+    }
     updateStats();
   });
 
   sampleSelect.addEventListener("change", () => {
     const sample = state.samples[sampleSelect.value];
     if (sample) {
-      codeInput.value = sample;
+      setCode(sample);
       updateStats();
     }
   });
@@ -160,7 +191,7 @@ function setupEventListeners() {
 
 // ── Stats Bar ──────────────────────────────────────────────────────────────────
 function updateStats() {
-  const code = codeInput.value;
+  const code = getCode();
   const lines = code.split("\n").length;
   const chars = code.length;
   const hasCode = code.trim().length > 0;
@@ -188,7 +219,7 @@ async function runAnalysis() {
   analyzeBtn.disabled = true;
 
   const body = {
-    code: codeInput.value,
+    code: getCode(),
     language: state.language,
     response_language: $("response-lang-select").value,
     options: {
@@ -199,40 +230,196 @@ async function runAnalysis() {
     },
   };
 
+  if (!body.options.explanation && !body.options.complexity && !body.options.lines && !body.options.improvements) {
+    showError("All analysis options are turned off. Please turn on at least one option in the settings to get an analysis.");
+    analyzingBanner.style.display = "none";
+    analyzeBtn.disabled = false;
+    emptyState.style.display = "block";
+    return;
+  }
+
   try {
     const res = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
 
     if (!res.ok) {
-      showError(data.error || "Analysis failed.");
+      const errData = await res.json().catch(()=>({}));
+      showError(errData.error || "Analysis failed.");
+      analyzingBanner.style.display = "none";
+      analyzeBtn.disabled = false;
       return;
     }
 
-    state.results = data;
-    state.detectedLanguage = data.language;
-    state.quizQuestions = [];
-    state.quizAnswers = {};
-    state.quizSubmitted = false;
-    state.quizScore = 0;
-
-    if (data.truncated) {
-      warnBanner.style.display = "block";
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let explanationText = "";
+    
+    // We will render partial results as they arrive
+    state.results = {};
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunkStr = decoder.decode(value, { stream: true });
+      const events = chunkStr.split("\\n\\n");
+      
+      for (const ev of events) {
+        if (!ev.trim() || !ev.startsWith("data: ")) continue;
+        
+        try {
+          const data = JSON.parse(ev.substring(6));
+          
+          if (data.type === "meta") {
+            analyzingBanner.style.display = "none";
+            state.detectedLanguage = data.language;
+            state.results = { ...data, code: getCode() };
+            if (data.truncated) warnBanner.style.display = "block";
+            
+            // Render the initial shell of the results area
+            renderResultsShell(data, body.options);
+          } 
+          else if (data.type === "explanation_chunk") {
+            explanationText += data.text;
+            const expEl = document.getElementById("stream-explanation");
+            if (expEl) expEl.textContent = explanationText;
+          }
+          else if (data.type === "complete") {
+            // Merge complete data
+            state.results = { ...state.results, ...data.data };
+            if (body.options.explanation) {
+              state.results.explanation = explanationText;
+            } else {
+              delete state.results.explanation;
+            }
+            
+            // Re-render the full tabs now that we have complexity/lines/improvements
+            renderTabsComplete(state.results);
+            
+            quizBtn.disabled = false;
+            updateStats();
+            analyzeBtn.disabled = false;
+          }
+          else if (data.type === "error") {
+            showError(data.error);
+            analyzeBtn.disabled = false;
+          }
+        } catch (e) {
+          console.warn("Error parsing chunk", e, ev);
+        }
+      }
     }
-
-    renderResults(data);
-    quizBtn.disabled = false;
-    updateStats();
   } catch (e) {
-    showError("❌ Network error — is the server running? " + e.message);
-  } finally {
+    showError("❌ Network error — " + e.message);
     analyzingBanner.style.display = "none";
     analyzeBtn.disabled = false;
   }
 }
+
+function renderResultsShell(data, options) {
+  resultsArea.style.display = "block";
+  emptyState.style.display = "none";
+
+  const now = new Date();
+  resultLangBadge.textContent = `${data.language_icon || ""} ${data.language}`;
+  resultTime.textContent = `Analysis complete · ${now.getHours().toString().padStart(2,"0")}:${now.getMinutes().toString().padStart(2,"0")}`;
+
+  let firstTab = null;
+  let tabsHtml = "";
+  let panelsHtml = "";
+
+  if (options && options.explanation) {
+    firstTab = "explanation";
+    tabsHtml += `<button class="tab-btn active" data-tab="explanation">💬 Explanation</button>`;
+    panelsHtml += `
+    <div class="tab-panel active" data-tab="explanation">
+      <div class="glass-card">
+        <div class="section-title"><span class="icon">💬</span> Plain-English Explanation</div>
+        <div class="section-divider"></div>
+        <div class="explanation-text relative-container">
+           <button class="copy-btn" onclick="copyText('stream-explanation')">📋 Copy</button>
+           <div id="stream-explanation" style="white-space:pre-wrap; min-height: 50px;"></div>
+        </div>
+      </div>
+    </div>`;
+  } else if (options) {
+    const tabs = [];
+    if (options.complexity)   tabs.push({ id: "complexity",   label: "⏱️ Complexity" });
+    if (options.lines)        tabs.push({ id: "lines",        label: "📝 Line-by-Line" });
+    if (options.improvements) tabs.push({ id: "improvements", label: "🚀 Improvements" });
+
+    if (tabs.length > 0) {
+      firstTab = tabs[0].id;
+      tabsHtml = `<button class="tab-btn active" data-tab="${firstTab}">${tabs[0].label}</button>`;
+      panelsHtml = `
+      <div class="tab-panel active" data-tab="${firstTab}">
+        <div class="glass-card" style="text-align:center; padding: 2rem; color: var(--text-sec);">
+          Generating ${tabs[0].label.replace(/[^a-zA-Z- ]/g, "").trim()}...
+        </div>
+      </div>`;
+    } else {
+      tabsHtml = `<button class="tab-btn active" data-tab="none">Analysis</button>`;
+      panelsHtml = `<div class="tab-panel active" data-tab="none"><div class="glass-card">No sections requested.</div></div>`;
+    }
+  }
+
+  tabsBar.innerHTML = tabsHtml;
+  tabPanels.innerHTML = panelsHtml;
+}
+
+function copyText(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    navigator.clipboard.writeText(el.innerText || el.textContent);
+    alert("Copied to clipboard!");
+  }
+}
+
+function renderTabsComplete(data) {
+  const tabs = [];
+  if (data.explanation !== undefined)  tabs.push({ id: "explanation",  label: "💬 Explanation" });
+  if (data.complexity !== undefined)   tabs.push({ id: "complexity",   label: "⏱️ Complexity" });
+  if (data.lines !== undefined)        tabs.push({ id: "lines",        label: "📝 Line-by-Line" });
+  if (data.improvements !== undefined) tabs.push({ id: "improvements", label: "🚀 Improvements" });
+
+  tabsBar.innerHTML = tabs.map((t, i) =>
+    `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`
+  ).join("");
+
+  tabPanels.innerHTML = "";
+
+  tabs.forEach((t, i) => {
+    const panel = document.createElement("div");
+    panel.className = `tab-panel${i === 0 ? " active" : ""}`;
+    panel.dataset.tab = t.id;
+
+    if (t.id === "explanation") panel.innerHTML = renderExplanation(data);
+    else if (t.id === "complexity") panel.innerHTML = renderComplexity(data.complexity);
+    else if (t.id === "lines") panel.innerHTML = renderLines(data);
+    else if (t.id === "improvements") panel.innerHTML = renderImprovements(data.improvements);
+
+    tabPanels.appendChild(panel);
+  });
+  
+  // Highlight JS on rendered blocks
+  document.querySelectorAll('pre code').forEach((block) => {
+    hljs.highlightElement(block);
+  });
+
+  // Tab switching
+  tabsBar.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabsBar.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      tabPanels.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      tabPanels.querySelector(`[data-tab="${btn.dataset.tab}"]`).classList.add("active");
+    });
+  });
+}
+
 
 // ── Quiz ───────────────────────────────────────────────────────────────────────
 async function runQuiz() {
@@ -285,57 +472,6 @@ async function runQuiz() {
 }
 
 // ── Render Results ─────────────────────────────────────────────────────────────
-function renderResults(data) {
-  resultsArea.style.display = "block";
-  emptyState.style.display = "none";
-
-  const now = new Date();
-  resultLangBadge.textContent = `${data.language_icon || ""} ${data.language}`;
-  resultTime.textContent = `Analysis complete · ${now.getHours().toString().padStart(2,"0")}:${now.getMinutes().toString().padStart(2,"0")}`;
-
-  // Build tabs
-  const tabs = [];
-  if (data.explanation !== undefined)  tabs.push({ id: "explanation",  label: "💬 Explanation" });
-  if (data.complexity !== undefined)   tabs.push({ id: "complexity",   label: "⏱️ Complexity" });
-  if (data.lines !== undefined)        tabs.push({ id: "lines",        label: "📝 Line-by-Line" });
-  if (data.improvements !== undefined) tabs.push({ id: "improvements", label: "🚀 Improvements" });
-
-  tabsBar.innerHTML = tabs.map((t, i) =>
-    `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`
-  ).join("");
-
-  tabPanels.innerHTML = "";
-
-  tabs.forEach((t, i) => {
-    const panel = document.createElement("div");
-    panel.className = `tab-panel${i === 0 ? " active" : ""}`;
-    panel.dataset.tab = t.id;
-
-    if (t.id === "explanation") panel.innerHTML = renderExplanation(data);
-    else if (t.id === "complexity") panel.innerHTML = renderComplexity(data.complexity);
-    else if (t.id === "lines") panel.innerHTML = renderLines(data);
-    else if (t.id === "improvements") panel.innerHTML = renderImprovements(data.improvements);
-
-    tabPanels.appendChild(panel);
-  });
-
-  // Tab switching
-  tabsBar.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      tabsBar.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      tabPanels.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-      btn.classList.add("active");
-      tabPanels.querySelector(`[data-tab="${btn.dataset.tab}"]`).classList.add("active");
-    });
-  });
-
-  // Switch to analyze view if not already there
-  const analyzeNavBtn = document.querySelector(".nav-item[data-view='analyze-view']");
-  if (analyzeNavBtn && !analyzeNavBtn.classList.contains("active")) {
-    analyzeNavBtn.click();
-  }
-}
-
 // ── Tab Renderers ──────────────────────────────────────────────────────────────
 function renderExplanation(data) {
   const text = data.explanation || "";
@@ -345,7 +481,10 @@ function renderExplanation(data) {
     <div class="glass-card">
       <div class="section-title"><span class="icon">💬</span> Plain-English Explanation</div>
       <div class="section-divider"></div>
-      <div class="explanation-text">${escapeHtml(text)}</div>
+      <div class="explanation-text relative-container">
+        <button class="copy-btn" onclick="copyText('exp-content')">📋 Copy</button>
+        <div id="exp-content" style="white-space:pre-wrap;">${escapeHtml(text)}</div>
+      </div>
       <a class="download-btn" href="${url}" download="codeexplain_explanation.txt">
         ⬇️ Download Explanation
       </a>
@@ -398,7 +537,8 @@ function renderComplexity(cx) {
 
 function renderLines(data) {
   const items = data.lines || [];
-  const codeLines = (data.code || "").split("\n");
+  const codeText = data.code || "";
+  const codeLines = codeText.split('\n');
   
   const commentsByLine = {};
   const unmappedComments = [];
@@ -417,30 +557,54 @@ function renderLines(data) {
     }
   });
 
-  let codeHtml = "";
-  codeLines.forEach((lineText, idx) => {
-    const lineNum = idx + 1;
-    codeHtml += `
-      <div class="code-line-container">
-        <div class="code-line">
-          <span class="line-number">${lineNum}</span>
-          <span class="line-content">${escapeHtml(lineText) || " "}</span>
+  let linesHtml = "";
+  if (codeText.trim() === "") {
+     linesHtml = `<div style="padding: 1rem; color: var(--text-sec); text-align: center;">No code available for line-by-line view.</div>`;
+  } else {
+    for (let i = 0; i < codeLines.length; i++) {
+      const lineNum = i + 1;
+      const codeStr = codeLines[i];
+      
+      linesHtml += `<div class="code-line-container" style="margin-bottom: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">`;
+      
+      let highlightedCode = escapeHtml(codeStr);
+      try {
+        const lang = (data.language || "").toLowerCase();
+        let mode = lang;
+        if (lang === "python") mode = "python";
+        else if (lang === "javascript") mode = "javascript";
+        else if (lang === "java") mode = "java";
+        else if (lang === "c++") mode = "cpp";
+        else if (lang === "c") mode = "c";
+        
+        if (mode && hljs.getLanguage(mode)) {
+          highlightedCode = hljs.highlight(codeStr, { language: mode, ignoreIllegals: true }).value;
+        } else {
+          highlightedCode = hljs.highlightAuto(codeStr).value;
+        }
+      } catch (e) {}
+
+      linesHtml += `<div class="code-line-code" style="display: flex;">
+        <div class="line-num" style="padding: 0.5rem; color: rgba(255,255,255,0.3); background: rgba(0,0,0,0.3); text-align: right; min-width: 3rem; user-select: none; font-family: 'Fira Code', monospace; font-size: 0.85rem; border-right: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: flex-end;">${lineNum}</div>
+        <div class="code-text" style="padding: 0.5rem 1rem; font-family: 'Fira Code', monospace; font-size: 0.9rem; white-space: pre-wrap; word-break: break-all; width: 100%;"><code class="language-${(data.language||'').toLowerCase()} hljs" style="background:transparent; padding:0;">${highlightedCode}</code></div>
+      </div>`;
+
+      if (commentsByLine[lineNum]) {
+        linesHtml += `<div class="code-line-comment" style="padding: 0.75rem 1rem 0.75rem 3.5rem; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(56, 189, 248, 0.08); color: #e0f2fe; font-size: 0.95rem; position: relative; line-height: 1.5;">
+          <span style="position: absolute; left: 1.5rem; top: 0.75rem; color: #38bdf8; font-weight: bold;">↳</span>
+          ${escapeHtml(commentsByLine[lineNum])}
         </div>`;
-    if (commentsByLine[lineNum]) {
-      codeHtml += `
-        <div class="inline-comment">
-          <span class="comment-icon">💡</span>
-          <span class="comment-text">${escapeHtml(commentsByLine[lineNum])}</span>
-        </div>`;
+      }
+      
+      linesHtml += `</div>`;
     }
-    codeHtml += `</div>`;
-  });
+  }
 
   let unmappedHtml = "";
   if (unmappedComments.length > 0) {
-    unmappedHtml = `<div class="unmapped-comments" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
-      <strong style="color:#fff;font-size:.9rem;margin-bottom:.6rem;display:block;">Additional Commentary</strong>
-      ${unmappedComments.map(c => `<div class="line-comment-row"><div class="line-num-badge">${escapeHtml(String(c.line))}</div><div class="line-comment-text">${escapeHtml(c.explanation)}</div></div>`).join("")}
+    unmappedHtml = `<div class="unmapped-comments" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+      <strong style="color:#fff;font-size:1.1rem;margin-bottom:1rem;display:block;">Additional Commentary</strong>
+      ${unmappedComments.map(c => `<div class="line-comment-row" style="margin-bottom:0.75rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 4px solid #f59e0b;"><div class="line-comment-text" style="color:#e2e8f0; font-size:0.95rem; line-height:1.5;">${escapeHtml(c.explanation)}</div></div>`).join("")}
     </div>`;
   }
 
@@ -448,9 +612,11 @@ function renderLines(data) {
     <div class="glass-card">
       <div class="section-title"><span class="icon">📝</span> Line-by-Line Commentary</div>
       <div class="section-divider"></div>
-      <div class="interactive-code-view">
-        ${codeHtml}
+      
+      <div class="line-by-line-view" style="margin-bottom: 1.5rem;">
+        ${linesHtml}
       </div>
+      
       ${unmappedHtml}
     </div>`;
 }
@@ -461,7 +627,7 @@ function renderImprovements(improvements) {
   }
   const cards = improvements.map((imp, i) => {
     const codeBlock = (imp.code && imp.code.toUpperCase() !== "N/A")
-      ? `<div class="imp-code">${escapeHtml(imp.code)}</div>` : "";
+      ? `<div class="relative-container" style="margin-top: 1rem;"><button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); alert('Copied!')">📋</button><pre><code class="language-python">${escapeHtml(imp.code)}</code></pre></div>` : "";
     return `
       <div class="improvement-card">
         <div class="imp-num">Improvement #${i + 1}</div>
@@ -590,12 +756,12 @@ function submitQuiz() {
       state.quizAnswers = {};
       state.quizSubmitted = false;
       state.quizScore = 0;
-      renderResults(state.results);
-      // Switch to quiz tab
-      setTimeout(() => {
-        const qTab = document.querySelector(".tab-btn[data-tab='quiz']");
-        if (qTab) qTab.click();
-      }, 50);
+      
+      const quizContainer = $("quiz-area-container");
+      if (quizContainer) {
+        quizContainer.innerHTML = renderQuiz();
+        wireQuizInteraction();
+      }
     });
   }
 }
@@ -619,7 +785,7 @@ function renderScoreCard(score, total) {
 
 // ── Clear ──────────────────────────────────────────────────────────────────────
 function clearAll() {
-  codeInput.value = "";
+  setCode("");
   sampleSelect.value = "";
   state.results = null;
   state.quizQuestions = [];
