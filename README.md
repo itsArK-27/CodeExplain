@@ -1,6 +1,6 @@
 # 🔮 CodeExplain — Plain-English Code Tutor
 
-> **Project 4** from the AI Engineer Launchpad · Built with Python, Streamlit & Google Gemini API
+> **Project 4** from the AI Engineer Launchpad · Built with Python, Flask & Groq API
 
 ---
 
@@ -38,16 +38,16 @@ pip install -r requirements.txt
 copy .env.example .env
 
 # Edit .env and add your key:
-# GEMINI_API_KEY=your_key_here
+# GROQ_API_KEY=your_key_here
 ```
-> 🔑 Get a **free** Gemini API key at: https://aistudio.google.com/app/apikey
+> 🔑 Get a **free** Gemini API key at: https://console.groq.com/keys
 
 ### 3. Run the App
 ```bash
-streamlit run app.py
+python server.py
 ```
 
-The app opens at **http://localhost:8501**
+The app opens at **http://localhost:5000**
 
 ---
 
@@ -80,9 +80,9 @@ CodeExplain/
 ## 🛠️ Tech Stack
 
 - **Frontend**: Streamlit + Custom CSS/JS (3D, animations, particles)
-- **LLM**: Google Gemini 1.5 Flash
+- **LLM**: Groq LLaMA 3.3 70B
 - **Language**: Python 3.10+
-- **Libraries**: `google-generativeai`, `python-dotenv`, `pygments`
+- **Libraries**: `groq`, `python-dotenv`, `flask`
 
 ---
 
@@ -98,3 +98,40 @@ CodeExplain/
 
 ## 📝 License
 MIT — Free to use, modify, and distribute.
+
+
+---
+
+## 🚀 Future Improvements
+
+## 2. UI & User Experience (UX)
+
+The current UI is beautiful, but the interaction with code can be enhanced.
+
+*   **Syntax Highlighting in Output**: The returned code in the "Line-by-Line" and "Improvements" tabs is currently plain text. Integrating a lightweight library like [PrismJS](https://prismjs.com/) or [Highlight.js](https://highlightjs.org/) would make the explanations much easier to read.
+*   **Rich Code Editor Input**: Replace the plain `<textarea>` in `index.html` with a lightweight code editor library like [CodeMirror](https://codemirror.net/). This will give users live syntax highlighting, proper indentation, and line numbers as they type or paste.
+*   **Copy to Clipboard**: Add a small "Copy" icon button to the code snippets and the generated explanations so users can easily extract the information.
+*   **Streaming Responses**: The backend currently waits for the complete LLM response before sending it to the frontend. Implementing Server-Sent Events (SSE) and utilizing Groq's streaming capabilities would create a ChatGPT-like typing effect, significantly reducing perceived latency.
+
+## 3. Backend Optimization & Reliability
+
+> [!WARNING]
+> **API Abuse Protection**
+> Your Groq API key is used on the backend without any user authentication or rate limiting. If this app is deployed publicly, anyone could spam the `/api/analyze` endpoint and drain your API quota.
+
+*   **Implement Rate Limiting**: Use a library like `Flask-Limiter` to restrict the number of requests a single IP address can make per minute.
+*   **Response Caching**: Many users might try the built-in sample snippets. Implement caching (e.g., using `functools.lru_cache` or `Flask-Caching`) so that if the exact same code and language settings are requested, the backend returns the cached response instead of making another Groq API call.
+*   **Granular Error Handling**: Currently, the server catches all exceptions and returns `{"error": str(e)}`. Categorizing errors (e.g., "Groq API Timeout", "Parsing Error", "Rate Limit Exceeded") with appropriate HTTP status codes (429, 502, etc.) allows the frontend to show more helpful recovery messages.
+
+## 4. Frontend Code Quality (`app.js`)
+
+> [!NOTE]
+> **Modularization**
+> `app.js` is nearly 800 lines long. While it works well, it will become difficult to maintain as you add more features.
+
+*   **Split into ES6 Modules**: Consider breaking `app.js` into distinct files:
+    *   `api.js`: Handles all `fetch()` calls to the backend.
+    *   `ui.js`: Handles tab switching, DOM updates, and rendering HTML.
+    *   `quiz.js`: Contains the quiz logic.
+    *   `effects.js`: Contains the particle canvas and mouse parallax logic.
+*   **Template Rendering**: Building HTML strings directly in JS (e.g., `renderExplanation`, `renderQuiz`) can be prone to typos and XSS vulnerabilities if `escapeHtml` is forgotten. In the future, a lightweight templating engine or framework (like Alpine.js) could make rendering much cleaner.
