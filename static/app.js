@@ -42,6 +42,7 @@ const tabPanels     = $("tab-panels");
 const emptyState    = $("empty-state");
 const resultLangBadge = $("result-lang-badge");
 const resultTime    = $("result-time");
+const downloadResultsBtn = $("download-results-btn");
 const sidebarEl     = $("sidebar");
 const sidebarToggle = $("sidebar-toggle");
 
@@ -138,6 +139,7 @@ function setupEventListeners() {
   analyzeBtn.addEventListener("click", runAnalysis);
   clearBtn.addEventListener("click", clearAll);
   quizBtn.addEventListener("click", runQuiz);
+  downloadResultsBtn.addEventListener("click", downloadResults);
 
   const desktopCollapseBtn = $("desktop-collapse-btn");
   if (desktopCollapseBtn) {
@@ -322,6 +324,7 @@ async function runAnalysis() {
 function renderResultsShell(data, options) {
   resultsArea.style.display = "block";
   emptyState.style.display = "none";
+  downloadResultsBtn.style.display = "none";
 
   const now = new Date();
   resultLangBadge.textContent = `${data.language_icon || ""} ${data.language}`;
@@ -384,6 +387,10 @@ function renderTabsComplete(data) {
   if (data.complexity !== undefined)   tabs.push({ id: "complexity",   label: "⏱️ Complexity" });
   if (data.lines !== undefined)        tabs.push({ id: "lines",        label: "📝 Line-by-Line" });
   if (data.improvements !== undefined) tabs.push({ id: "improvements", label: "🚀 Improvements" });
+
+  if (tabs.length > 0) {
+    downloadResultsBtn.style.display = "inline-flex";
+  }
 
   tabsBar.innerHTML = tabs.map((t, i) =>
     `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`
@@ -475,8 +482,6 @@ async function runQuiz() {
 // ── Tab Renderers ──────────────────────────────────────────────────────────────
 function renderExplanation(data) {
   const text = data.explanation || "";
-  const blob = new Blob([text], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
   return `
     <div class="glass-card">
       <div class="section-title"><span class="icon">💬</span> Plain-English Explanation</div>
@@ -485,9 +490,6 @@ function renderExplanation(data) {
         <button class="copy-btn" onclick="copyText('exp-content')">📋 Copy</button>
         <div id="exp-content" style="white-space:pre-wrap;">${escapeHtml(text)}</div>
       </div>
-      <a class="download-btn" href="${url}" download="codeexplain_explanation.txt">
-        ⬇️ Download Explanation
-      </a>
     </div>`;
 }
 
@@ -936,6 +938,70 @@ function setupMouseEffects() {
       100% { transform:scale(4); opacity:0; }
     }`;
   document.head.appendChild(style);
+}
+
+// ── Download Results ───────────────────────────────────────────────────────────
+function downloadResults() {
+  if (!state.results) return;
+
+  const data = state.results;
+  let content = `CodeExplain Analysis Results\n`;
+  content += `Language: ${data.language || "Unknown"}\n`;
+  content += `====================================================\n\n`;
+
+  if (data.explanation) {
+    content += `💬 PLAIN-ENGLISH EXPLANATION:\n`;
+    content += `----------------------------------------------------\n`;
+    content += `${data.explanation}\n\n`;
+  }
+
+  if (data.complexity) {
+    const cx = data.complexity;
+    content += `⏱️ COMPLEXITY ANALYSIS:\n`;
+    content += `----------------------------------------------------\n`;
+    content += `Time Complexity:  ${cx.time || "N/A"}\n`;
+    if (cx.time_explanation) content += `  Reason: ${cx.time_explanation}\n`;
+    content += `Space Complexity: ${cx.space || "N/A"}\n`;
+    if (cx.space_explanation) content += `  Reason: ${cx.space_explanation}\n`;
+    if (cx.best && cx.best !== "N/A") content += `Best Case:  ${cx.best}\n`;
+    if (cx.average && cx.average !== "N/A") content += `Average Case: ${cx.average}\n`;
+    if (cx.worst && cx.worst !== "N/A") content += `Worst Case:   ${cx.worst}\n`;
+    if (cx.summary) content += `In Practice:  ${cx.summary}\n`;
+    content += `\n`;
+  }
+
+  if (data.lines && data.lines.length > 0) {
+    content += `📝 LINE-BY-LINE EXPLANATION:\n`;
+    content += `----------------------------------------------------\n`;
+    data.lines.forEach(item => {
+      content += `Line ${item.line}: ${item.explanation}\n`;
+    });
+    content += `\n`;
+  }
+
+  if (data.improvements && data.improvements.length > 0) {
+    content += `🚀 SUGGESTED IMPROVEMENTS:\n`;
+    content += `----------------------------------------------------\n`;
+    data.improvements.forEach((imp, i) => {
+      content += `Improvement #${i + 1}: ${imp.title}\n`;
+      if (imp.issue) content += `Issue: ${imp.issue}\n`;
+      if (imp.fix) content += `Fix:   ${imp.fix}\n`;
+      if (imp.code && imp.code !== "N/A") {
+        content += `Example Code:\n${imp.code}\n`;
+      }
+      content += `\n`;
+    });
+  }
+
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `CodeExplain_Results.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
