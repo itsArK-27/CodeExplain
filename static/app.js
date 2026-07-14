@@ -359,26 +359,60 @@ function renderComplexity(cx) {
 
 function renderLines(data) {
   const items = data.lines || [];
-  const code = data.code || "";
-  const commentRows = items.map(item => `
-    <div class="line-comment-row">
-      <div class="line-num-badge">L${escapeHtml(String(item.line || "?"))}</div>
-      <div class="line-comment-text">${escapeHtml(item.explanation || "")}</div>
-    </div>`).join("");
+  const codeLines = (data.code || "").split("\n");
+  
+  const commentsByLine = {};
+  const unmappedComments = [];
+
+  items.forEach(item => {
+    const match = String(item.line).match(/(\d+)/);
+    if (match) {
+      const lineNum = parseInt(match[1], 10);
+      if (commentsByLine[lineNum]) {
+        commentsByLine[lineNum] += " " + item.explanation;
+      } else {
+        commentsByLine[lineNum] = item.explanation;
+      }
+    } else {
+      unmappedComments.push(item);
+    }
+  });
+
+  let codeHtml = "";
+  codeLines.forEach((lineText, idx) => {
+    const lineNum = idx + 1;
+    codeHtml += `
+      <div class="code-line-container">
+        <div class="code-line">
+          <span class="line-number">${lineNum}</span>
+          <span class="line-content">${escapeHtml(lineText) || " "}</span>
+        </div>`;
+    if (commentsByLine[lineNum]) {
+      codeHtml += `
+        <div class="inline-comment">
+          <span class="comment-icon">💡</span>
+          <span class="comment-text">${escapeHtml(commentsByLine[lineNum])}</span>
+        </div>`;
+    }
+    codeHtml += `</div>`;
+  });
+
+  let unmappedHtml = "";
+  if (unmappedComments.length > 0) {
+    unmappedHtml = `<div class="unmapped-comments" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+      <strong style="color:#fff;font-size:.9rem;margin-bottom:.6rem;display:block;">Additional Commentary</strong>
+      ${unmappedComments.map(c => `<div class="line-comment-row"><div class="line-num-badge">${escapeHtml(String(c.line))}</div><div class="line-comment-text">${escapeHtml(c.explanation)}</div></div>`).join("")}
+    </div>`;
+  }
+
   return `
     <div class="glass-card">
       <div class="section-title"><span class="icon">📝</span> Line-by-Line Commentary</div>
       <div class="section-divider"></div>
-      <div class="lbl-grid">
-        <div>
-          <strong style="color:#fff;font-size:.9rem;margin-bottom:.6rem;display:block;">🖥️ Original Code</strong>
-          <pre class="code-block">${escapeHtml(code)}</pre>
-        </div>
-        <div>
-          <strong style="color:#fff;font-size:.9rem;margin-bottom:.6rem;display:block;">💡 Commentary</strong>
-          ${commentRows}
-        </div>
+      <div class="interactive-code-view">
+        ${codeHtml}
       </div>
+      ${unmappedHtml}
     </div>`;
 }
 
