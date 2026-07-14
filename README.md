@@ -40,7 +40,7 @@ copy .env.example .env
 # Edit .env and add your key:
 # GROQ_API_KEY=your_key_here
 ```
-> 🔑 Get a **free** Gemini API key at: https://console.groq.com/keys
+> 🔑 Get a **free** Groq API key at: https://console.groq.com/keys
 
 ### 3. Run the App
 ```bash
@@ -55,13 +55,15 @@ The app opens at **http://localhost:5000**
 
 ```
 CodeExplain/
-├── app.py              # Main Streamlit application
-├── llm_engine.py       # Google Gemini API integration
+├── server.py           # Main Flask backend application
+├── llm_engine.py       # Groq API integration (Llama-3.3-70b-versatile)
 ├── prompts.py          # All LLM prompt templates
 ├── quiz_engine.py      # Quiz mode state & rendering
 ├── utils.py            # Language detection & helpers
-├── styles/
-│   └── main.css        # 3D immersive CSS
+├── static/             # Frontend assets served by Flask
+│   ├── index.html      # Main HTML file with CodeMirror & Highlight.js
+│   ├── app.css         # Immersive glassmorphism and 3D design styles
+│   └── app.js          # Client-side UI interactions, SSE streaming, and quiz logic
 ├── requirements.txt    # Python dependencies
 ├── .env.example        # API key template
 └── README.md           # This file
@@ -71,67 +73,60 @@ CodeExplain/
 
 ## 🎯 Project Outcomes
 
-1. **✅ Multi-language support** — Explains snippets in Python, JavaScript, Java, C++, Go, Rust, and more with accurate Big-O complexity analysis
-2. **✅ Structured consistent output** — Four clearly separated sections (Explanation / Complexity / Line-by-Line / Improvements) stay consistent across any input
-3. **✅ Quiz Mode** — Generates 5 comprehension questions (MCQ + True/False) with scoring, feedback, and retake option
+1. **✅ Multi-language support** — Explains snippets in Python, JavaScript, Java, C++, Go, Rust, and more with accurate Big-O complexity analysis.
+2. **✅ Structured consistent output** — Four clearly separated sections (Explanation / Complexity / Line-by-Line / Improvements) stay consistent across any input.
+3. **✅ Quiz Mode** — Generates 5 comprehension questions (MCQ + True/False) with scoring, feedback, and retake option.
+4. **✅ SSE Streaming & Code Copying** — Stream responses live and copy code or explanations easily via copy-to-clipboard buttons.
+5. **✅ Rich Syntax Editing & Highlighting** — Live coding via CodeMirror editor and rendered code highlighting using Highlight.js.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Streamlit + Custom CSS/JS (3D, animations, particles)
-- **LLM**: Groq LLaMA 3.3 70B
-- **Language**: Python 3.10+
-- **Libraries**: `groq`, `python-dotenv`, `flask`
+- **Frontend**: Vanilla HTML5, CSS3, JavaScript (CodeMirror 5, Highlight.js, canvas particles, glassmorphism, mouse-parallax tilt)
+- **Backend**: Flask (Python) with Server-Sent Events (SSE) streaming support
+- **LLM**: Groq LLaMA 3.3 70B (`llama-3.3-70b-versatile`)
+- **Libraries**: `groq`, `python-dotenv`, `flask`, `gunicorn`
 
 ---
 
 ## 💡 Usage Tips
 
-- **Load a sample** from the sidebar to try without writing code
-- **Auto-detect** language is enabled by default — or select manually
-- **Toggle sections** in the sidebar to run only what you need
-- **Quiz Mode** requires analysis to be run first
-- Enter your API key directly in the sidebar (no need to edit .env)
+- **Load a sample** from the sidebar dropdown to try without writing code manually.
+- **Auto-detect** language is enabled by default — or select manually from the topbar dropdown.
+- **Toggle sections** in the sidebar to run only what you need (Explanation, Complexity, Line-by-Line, Improvements).
+- **Quiz Mode** requires analysis to be run first.
+- Make sure to set your `GROQ_API_KEY` in the `.env` file before starting the Flask server.
 
 ---
 
 ## 📝 License
 MIT — Free to use, modify, and distribute.
 
-
 ---
 
 ## 🚀 Future Improvements
 
-## 2. UI & User Experience (UX)
-
-The current UI is beautiful, but the interaction with code can be enhanced.
-
-*   **Syntax Highlighting in Output**: The returned code in the "Line-by-Line" and "Improvements" tabs is currently plain text. Integrating a lightweight library like [PrismJS](https://prismjs.com/) or [Highlight.js](https://highlightjs.org/) would make the explanations much easier to read.
-*   **Rich Code Editor Input**: Replace the plain `<textarea>` in `index.html` with a lightweight code editor library like [CodeMirror](https://codemirror.net/). This will give users live syntax highlighting, proper indentation, and line numbers as they type or paste.
-*   **Copy to Clipboard**: Add a small "Copy" icon button to the code snippets and the generated explanations so users can easily extract the information.
-*   **Streaming Responses**: The backend currently waits for the complete LLM response before sending it to the frontend. Implementing Server-Sent Events (SSE) and utilizing Groq's streaming capabilities would create a ChatGPT-like typing effect, significantly reducing perceived latency.
-
-## 3. Backend Optimization & Reliability
+### 1. Backend Optimization & Reliability
 
 > [!WARNING]
 > **API Abuse Protection**
-> Your Groq API key is used on the backend without any user authentication or rate limiting. If this app is deployed publicly, anyone could spam the `/api/analyze` endpoint and drain your API quota.
+> The Groq API key is used on the backend without any user authentication or rate limiting. If this app is deployed publicly, anyone could spam the `/api/analyze` endpoint and drain your API quota.
 
 *   **Implement Rate Limiting**: Use a library like `Flask-Limiter` to restrict the number of requests a single IP address can make per minute.
-*   **Response Caching**: Many users might try the built-in sample snippets. Implement caching (e.g., using `functools.lru_cache` or `Flask-Caching`) so that if the exact same code and language settings are requested, the backend returns the cached response instead of making another Groq API call.
-*   **Granular Error Handling**: Currently, the server catches all exceptions and returns `{"error": str(e)}`. Categorizing errors (e.g., "Groq API Timeout", "Parsing Error", "Rate Limit Exceeded") with appropriate HTTP status codes (429, 502, etc.) allows the frontend to show more helpful recovery messages.
+*   **Response Caching**: Implement caching (e.g., using `functools.lru_cache` or `Flask-Caching`) so that if the exact same code and language settings are requested, the backend returns the cached response instead of making another Groq API call.
+*   **Granular Error Handling**: Categorize errors (e.g., "Groq API Timeout", "Parsing Error", "Rate Limit Exceeded") with appropriate HTTP status codes (429, 502, etc.) to allow the frontend to show more helpful recovery messages.
 
-## 4. Frontend Code Quality (`app.js`)
+### 2. Frontend Code Quality & Maintenance
 
 > [!NOTE]
 > **Modularization**
-> `app.js` is nearly 800 lines long. While it works well, it will become difficult to maintain as you add more features.
+> `app.js` is nearly 1000 lines long. While it works well, it will become difficult to maintain as you add more features.
 
 *   **Split into ES6 Modules**: Consider breaking `app.js` into distinct files:
     *   `api.js`: Handles all `fetch()` calls to the backend.
     *   `ui.js`: Handles tab switching, DOM updates, and rendering HTML.
     *   `quiz.js`: Contains the quiz logic.
     *   `effects.js`: Contains the particle canvas and mouse parallax logic.
-*   **Template Rendering**: Building HTML strings directly in JS (e.g., `renderExplanation`, `renderQuiz`) can be prone to typos and XSS vulnerabilities if `escapeHtml` is forgotten. In the future, a lightweight templating engine or framework (like Alpine.js) could make rendering much cleaner.
+*   **Template Rendering**: Use a lightweight templating engine or reactive framework (like Alpine.js) to make UI rendering much cleaner and safer against potential injection/typo issues.
+
