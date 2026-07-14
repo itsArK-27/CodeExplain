@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Import our engine modules (same as before — these haven't changed)
-from llm_engine import analyze_all, generate_quiz, analyze_stream
+# Import our engine modules
+from llm_engine import generate_quiz, analyze_stream
 from utils import (
     detect_language, validate_code_input, truncate_code,
     get_sample_snippets, get_language_icon, SUPPORTED_LANGUAGES

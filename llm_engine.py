@@ -83,37 +83,6 @@ def _get_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-def analyze_all(code: str, language: str, response_language: str = "English", options: dict = None) -> dict:
-    """Make a single LLM call to get all analysis components to bypass rate limits."""
-    client = _get_client()
-    
-    # Inject JSON schema into prompt
-    DynamicAnalysis = get_analysis_model(options)
-    schema = json.dumps(DynamicAnalysis.model_json_schema(), indent=2)
-    prompt = get_full_analysis_prompt(code, language, response_language, options).replace("{json_schema}", schema)
-    
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3,
-        max_tokens=2048,
-        response_format={"type": "json_object"}
-    )
-    
-    content = response.choices[0].message.content
-    if not content:
-        raise ValueError("Failed to parse LLM response.")
-        
-    try:
-        # Validate through Pydantic
-        parsed_data = DynamicAnalysis.model_validate_json(content)
-        return parsed_data.model_dump()
-    except Exception as e:
-        raise ValueError(f"Failed to parse LLM structured output: {e}")
-
 
 def generate_quiz(code: str, language: str, explanation: str, response_language: str = "English") -> list[dict]:
     """Generate quiz questions from the code and explanation."""
