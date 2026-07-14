@@ -73,13 +73,13 @@ def _get_client() -> Groq:
     return Groq(api_key=api_key)
 
 
-def analyze_all(code: str, language: str) -> dict:
+def analyze_all(code: str, language: str, response_language: str = "English") -> dict:
     """Make a single LLM call to get all analysis components to bypass rate limits."""
     client = _get_client()
     
     # Inject JSON schema into prompt
     schema = json.dumps(FullAnalysis.model_json_schema(), indent=2)
-    prompt = get_full_analysis_prompt(code, language).replace("{json_schema}", schema)
+    prompt = get_full_analysis_prompt(code, language, response_language).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -104,12 +104,12 @@ def analyze_all(code: str, language: str) -> dict:
         raise ValueError(f"Failed to parse LLM structured output: {e}")
 
 
-def generate_quiz(code: str, language: str, explanation: str) -> list[dict]:
+def generate_quiz(code: str, language: str, explanation: str, response_language: str = "English") -> list[dict]:
     """Generate quiz questions from the code and explanation."""
     client = _get_client()
     
     schema = json.dumps(Quiz.model_json_schema(), indent=2)
-    prompt = get_quiz_prompt(code, language, explanation).replace("{json_schema}", schema)
+    prompt = get_quiz_prompt(code, language, explanation, response_language).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",

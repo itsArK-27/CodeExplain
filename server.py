@@ -41,6 +41,8 @@ def api_analyze():
         "improvements": True,
     })
 
+    response_language = data.get("response_language", "English")
+
     # Validate
     valid, err = validate_code_input(code)
     if not valid:
@@ -57,7 +59,7 @@ def api_analyze():
     trimmed, was_truncated = truncate_code(code)
 
     try:
-        full = analyze_all(trimmed, language)
+        full = analyze_all(trimmed, language, response_language)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -87,12 +89,13 @@ def api_quiz():
     code = data.get("code", "")
     language = data.get("language", "Python")
     explanation = data.get("explanation", "")
+    response_language = data.get("response_language", "English")
 
     if not os.getenv("GROQ_API_KEY"):
         return jsonify({"error": "❌ GROQ_API_KEY not set in .env file."}), 500
 
     try:
-        questions = generate_quiz(code, language, explanation)
+        questions = generate_quiz(code, language, explanation, response_language)
         return jsonify({"questions": questions})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

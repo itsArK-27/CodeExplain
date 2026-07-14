@@ -155,6 +155,7 @@ async function runAnalysis() {
   const body = {
     code: codeInput.value,
     language: state.language,
+    response_language: $("response-lang-select").value,
     options: {
       explanation:  opts.explanation.checked,
       complexity:   opts.complexity.checked,
@@ -209,6 +210,7 @@ async function runQuiz() {
     code: state.results.code,
     language: state.results.language,
     explanation: state.results.explanation || "",
+    response_language: $("response-lang-select").value,
   };
 
   try {

@@ -9,10 +9,12 @@ and actionable improvement suggestions.
 You MUST respond in valid JSON matching the schema provided by the user.
 Be extremely concise to save tokens. Use simple language a beginner can understand."""
 
-def get_full_analysis_prompt(code: str, language: str) -> str:
+def get_full_analysis_prompt(code: str, language: str, response_language: str = "English") -> str:
     lines = code.strip().split('\n')
     numbered = '\n'.join([f"{i+1:3}| {line}" for i, line in enumerate(lines)])
     return f"""Analyze the following {language} code and provide a complete analysis including Explanation, Complexity, Line-by-Line commentary, and Improvements.
+
+CRITICAL INSTRUCTION: You MUST write your ENTIRE response (except for the code snippets themselves) in the following language: {response_language}.
 
 CODE (with line numbers):
 ```{language.lower()}
@@ -37,8 +39,10 @@ Your response MUST be a valid JSON object matching the following Pydantic schema
 {{json_schema}}
 """
 
-def get_quiz_prompt(code: str, language: str, explanation: str) -> str:
+def get_quiz_prompt(code: str, language: str, explanation: str, response_language: str = "English") -> str:
     return f"""Create a QUIZ about the following {language} code to test comprehension.
+
+CRITICAL INSTRUCTION: You MUST write the ENTIRE quiz (questions, options, and explanations) in the following language: {response_language}.
 
 CODE:
 ```{language.lower()}
