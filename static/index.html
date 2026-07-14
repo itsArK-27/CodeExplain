@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeExplain — Plain-English Code Tutor</title>
+  <meta name="description" content="Paste any code snippet and get a plain-English explanation, complexity analysis, line-by-line commentary, and smart improvement suggestions — powered by Groq." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+
+<!-- ── Particle Canvas ── -->
+<canvas id="particles-canvas"></canvas>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ── App Shell ── -->
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🔮</span>
+      <div class="logo-text">CodeExplain</div>
+      <div class="logo-sub">Plain-English Code Tutor</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">⚙️ Settings</div>
+      <div class="sidebar-divider"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">🌐 Language</div>
+      <select id="lang-select" class="styled-select">
+        <option value="Auto-detect">Auto-detect</option>
+      </select>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">🎛️ Analysis Options</div>
+      <label class="toggle-row">
+        <input type="checkbox" id="opt-explanation" checked />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span>💬 Explanation</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="opt-complexity" checked />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span>⏱️ Complexity</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="opt-lines" checked />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span>📝 Line-by-Line</span>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="opt-improvements" checked />
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span>🚀 Improvements</span>
+      </label>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">📦 Sample Code</div>
+      <select id="sample-select" class="styled-select">
+        <option value="">— Select Sample —</option>
+      </select>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-footer">
+      Built with ❤️ using<br />
+      <b style="color:#6c63ff">Flask</b> · <b style="color:#f55036">Groq API</b><br />
+      Project 4 — AI Engineer Launchpad
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main-content">
+
+    <!-- ── Hero ── -->
+    <section class="hero-section">
+      <div class="hero-badge">✨ AI-Powered Code Analysis</div>
+      <h1 class="hero-title">CodeExplain</h1>
+      <p class="hero-sub">
+        Paste any code snippet and instantly get a plain-English explanation,
+        complexity analysis, line-by-line commentary, and smart improvement suggestions.
+      </p>
+    </section>
+
+    <!-- ── Code Input Card ── -->
+    <div class="glass-card" id="input-card">
+      <div class="section-title"><span class="icon">📋</span> Paste Your Code</div>
+      <div class="section-divider"></div>
+      <textarea
+        id="code-input"
+        class="code-textarea"
+        placeholder="# Paste your Python, JavaScript, Java, C++, Go, Rust or any other code here...&#10;&#10;def example():&#10;    pass"
+        spellcheck="false"
+      ></textarea>
+
+      <!-- Stats bar -->
+      <div class="stats-bar" id="stats-bar" style="display:none">
+        <div class="stat-chip" id="stat-lang">🐍 Language: <span class="stat-val">Python</span></div>
+        <div class="stat-chip" id="stat-lines">📄 Lines: <span class="stat-val">0</span></div>
+        <div class="stat-chip" id="stat-chars">🔤 Chars: <span class="stat-val">0</span></div>
+      </div>
+    </div>
+
+    <!-- ── Action Buttons ── -->
+    <div class="btn-row">
+      <button class="btn btn-primary" id="analyze-btn" disabled>
+        <span class="btn-icon">🔮</span>
+        <span id="analyze-label">Analyze Code</span>
+      </button>
+      <button class="btn btn-secondary" id="quiz-btn" disabled>
+        🧠 Generate Quiz
+      </button>
+      <button class="btn btn-ghost" id="clear-btn">🗑️ Clear</button>
+    </div>
+
+    <!-- ── Analyzing Banner ── -->
+    <div class="analyzing-banner" id="analyzing-banner" style="display:none">
+      <div class="pulse-ring"></div>
+      <div class="analyzing-text">Analyzing your code...</div>
+      <div class="analyzing-sub">Powered by Groq · llama-3.3-70b-versatile</div>
+    </div>
+
+    <!-- ── Error Banner ── -->
+    <div class="error-banner" id="error-banner" style="display:none">
+      <span id="error-msg"></span>
+    </div>
+
+    <!-- ── Truncated Warning ── -->
+    <div class="warn-banner" id="warn-banner" style="display:none">
+      ⚠️ Code truncated to 150 lines for analysis. Results based on first 150 lines.
+    </div>
+
+    <!-- ── Results Area ── -->
+    <div id="results-area" style="display:none">
+
+      <!-- Lang Badge & timestamp -->
+      <div class="result-meta">
+        <div class="lang-badge" id="result-lang-badge"></div>
+        <span class="result-time" id="result-time"></span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-bar" id="tabs-bar"></div>
+      <div id="tab-panels"></div>
+
+    </div>
+
+    <!-- ── Empty State ── -->
+    <div class="glass-card empty-state" id="empty-state">
+      <div class="empty-icon">🔮</div>
+      <div class="empty-title">Ready to Decode Any Code</div>
+      <div class="empty-desc">
+        Paste a snippet above and click <strong style="color:#6c63ff">Analyze Code</strong> to get:<br /><br />
+        💬 Plain-English explanation<br />
+        ⏱️ Time &amp; space complexity<br />
+        📝 Line-by-line commentary<br />
+        🚀 Improvement suggestions<br />
+        🧠 Interactive quiz questions
+      </div>
+      <div class="empty-langs">
+        Supports Python · JavaScript · Java · C++ · Go · Rust · and more
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <footer class="footer">
+      <strong style="color:#6c63ff">CodeExplain</strong> — Project 4 · AI Engineer Launchpad ·
+      Built with Flask &amp; Groq ·
+      <span style="color:#00d4ff">Plain-English Code Tutor</span>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ── Mobile sidebar toggle ── -->
+<button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Sidebar">☰</button>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

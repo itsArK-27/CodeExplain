@@ -34,7 +34,7 @@ Provide up to 3 improvements. Focus on: readability, performance, best practices
 
 JSON SCHEMA REQUIREMENT:
 Your response MUST be a valid JSON object matching the following Pydantic schema:
-{json_schema}
+{{json_schema}}
 """
 
 def get_quiz_prompt(code: str, language: str, explanation: str) -> str:
@@ -52,4 +52,4 @@ Generate EXACTLY 5 questions. Make questions progressively harder. Mix conceptua
 
 JSON SCHEMA REQUIREMENT:
 Your response MUST be a valid JSON object matching the following Pydantic schema:
-{json_schema}"""
+{{json_schema}}"""
