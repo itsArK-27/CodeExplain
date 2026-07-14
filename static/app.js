@@ -945,59 +945,54 @@ function downloadResults() {
   if (!state.results) return;
 
   const data = state.results;
-  let content = `CodeExplain Analysis Results\n`;
-  content += `Language: ${data.language || "Unknown"}\n`;
-  content += `====================================================\n\n`;
+  let content = `# CodeExplain Analysis Results\n\n`;
+  content += `**Language:** ${data.language || "Unknown"}\n\n`;
+  content += `---\n\n`;
 
   if (data.explanation) {
-    content += `💬 PLAIN-ENGLISH EXPLANATION:\n`;
-    content += `----------------------------------------------------\n`;
+    content += `## 💬 Plain-English Explanation\n\n`;
     content += `${data.explanation}\n\n`;
   }
 
   if (data.complexity) {
     const cx = data.complexity;
-    content += `⏱️ COMPLEXITY ANALYSIS:\n`;
-    content += `----------------------------------------------------\n`;
-    content += `Time Complexity:  ${cx.time || "N/A"}\n`;
-    if (cx.time_explanation) content += `  Reason: ${cx.time_explanation}\n`;
-    content += `Space Complexity: ${cx.space || "N/A"}\n`;
-    if (cx.space_explanation) content += `  Reason: ${cx.space_explanation}\n`;
-    if (cx.best && cx.best !== "N/A") content += `Best Case:  ${cx.best}\n`;
-    if (cx.average && cx.average !== "N/A") content += `Average Case: ${cx.average}\n`;
-    if (cx.worst && cx.worst !== "N/A") content += `Worst Case:   ${cx.worst}\n`;
-    if (cx.summary) content += `In Practice:  ${cx.summary}\n`;
+    content += `## ⏱️ Complexity Analysis\n\n`;
+    content += `- **Time Complexity:** ${cx.time || "N/A"}\n`;
+    if (cx.time_explanation) content += `  - *Reason:* ${cx.time_explanation}\n`;
+    content += `- **Space Complexity:** ${cx.space || "N/A"}\n`;
+    if (cx.space_explanation) content += `  - *Reason:* ${cx.space_explanation}\n`;
+    if (cx.best && cx.best !== "N/A") content += `- **Best Case:** ${cx.best}\n`;
+    if (cx.average && cx.average !== "N/A") content += `- **Average Case:** ${cx.average}\n`;
+    if (cx.worst && cx.worst !== "N/A") content += `- **Worst Case:** ${cx.worst}\n`;
+    if (cx.summary) content += `- **In Practice:** ${cx.summary}\n`;
     content += `\n`;
   }
 
   if (data.lines && data.lines.length > 0) {
-    content += `📝 LINE-BY-LINE EXPLANATION:\n`;
-    content += `----------------------------------------------------\n`;
+    content += `## 📝 Line-by-Line Explanation\n\n`;
     data.lines.forEach(item => {
-      content += `Line ${item.line}: ${item.explanation}\n`;
+      content += `**Line ${item.line}:** ${item.explanation}\n\n`;
     });
-    content += `\n`;
   }
 
   if (data.improvements && data.improvements.length > 0) {
-    content += `🚀 SUGGESTED IMPROVEMENTS:\n`;
-    content += `----------------------------------------------------\n`;
+    content += `## 🚀 Suggested Improvements\n\n`;
     data.improvements.forEach((imp, i) => {
-      content += `Improvement #${i + 1}: ${imp.title}\n`;
-      if (imp.issue) content += `Issue: ${imp.issue}\n`;
-      if (imp.fix) content += `Fix:   ${imp.fix}\n`;
+      content += `### Improvement #${i + 1}: ${imp.title}\n\n`;
+      if (imp.issue) content += `- **Issue:** ${imp.issue}\n`;
+      if (imp.fix) content += `- **Fix:** ${imp.fix}\n`;
       if (imp.code && imp.code !== "N/A") {
-        content += `Example Code:\n${imp.code}\n`;
+        content += `\n**Example Code:**\n\`\`\`${(data.language || "").toLowerCase()}\n${imp.code}\n\`\`\`\n`;
       }
       content += `\n`;
     });
   }
 
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `CodeExplain_Results.txt`;
+  a.download = `CodeExplain_Results.md`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -426,6 +426,18 @@ body.sidebar-collapsed .sidebar-toggle {
   color: var(--text-primary);
 }
 .btn-secondary:hover:not(:disabled) { background: rgba(108,99,255,0.3); box-shadow: 0 0 20px rgba(108,99,255,0.3); }
+.btn-outline {
+  background: transparent;
+  color: var(--accent-primary, #6c63ff);
+  border: 2px solid var(--accent-primary, #6c63ff);
+  box-shadow: none;
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--accent-primary, #6c63ff);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(108,99,255,0.4);
+}
 .btn-ghost {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
