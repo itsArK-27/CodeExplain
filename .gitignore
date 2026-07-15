@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .gemini/
 .agents/
+
+start_server.bat
+stop_server.bat
