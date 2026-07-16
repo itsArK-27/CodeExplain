@@ -243,6 +243,35 @@ function setupEventListeners() {
       sidebarEl.classList.remove("open");
     }
   });
+
+  // Drag-and-Drop File Upload
+  const inputCard = $("input-card");
+  if (inputCard) {
+    inputCard.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      inputCard.style.border = "2px dashed #6c63ff";
+      inputCard.style.backgroundColor = "rgba(108, 99, 255, 0.1)";
+    });
+    inputCard.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      inputCard.style.border = "";
+      inputCard.style.backgroundColor = "";
+    });
+    inputCard.addEventListener("drop", (e) => {
+      e.preventDefault();
+      inputCard.style.border = "";
+      inputCard.style.backgroundColor = "";
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setCode(ev.target.result);
+          updateStats();
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
 }
 
 function updateStats() {
