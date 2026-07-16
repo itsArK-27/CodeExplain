@@ -9,6 +9,7 @@ from prompts import (
     SYSTEM_PROMPT,
     get_full_analysis_prompt,
     get_quiz_prompt,
+    get_chat_system_prompt,
 )
 
 load_dotenv()
@@ -24,6 +25,7 @@ class Improvement(BaseModel):
     title: str = Field(description="Short title of the improvement")
     issue: str = Field(description="What is wrong or suboptimal")
     fix: str = Field(description="How to fix it")
+    original_code: str = Field(description="The original code snippet that needs improvement if applicable, else 'N/A'")
     code: str = Field(description="Improved code snippet if applicable, else 'N/A'")
 
 class Complexity(BaseModel):
@@ -154,3 +156,30 @@ def analyze_stream(code: str, language: str, response_language: str = "English",
         yield {"type": "complete", "data": parsed_data.model_dump()}
     except Exception as e:
         yield {"type": "error", "error": f"Failed to parse output: {e}"}
+
+def chat_stream(code: str, language: str, explanation: str, history: list, response_language: str = "English"):
+    client = _get_client()
+    system_prompt_content = get_chat_system_prompt(code, language, explanation, response_language)
+    
+    messages = [{"role": "system", "content": system_prompt_content}]
+    
+    for msg in history:
+        messages.append({"role": msg.get("role"), "content": msg.get("content")})
+        
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=True
+        )
+        
+        for chunk in response:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield {"type": "chunk", "text": delta}
+                
+        yield {"type": "done"}
+    except Exception as e:
+        yield {"type": "error", "error": str(e)}

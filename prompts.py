@@ -49,6 +49,7 @@ Skip blank lines. Max one sentence per meaningful block.
         prompt += """
 For Improvements:
 Provide up to 3 improvements. Focus on: readability, performance, best practices. If no improvements are needed, provide an empty list.
+For each improvement, be sure to include the exact `original_code` block that you are replacing, alongside your `code` block. Do not provide the entire file, only the modified blocks.
 """
 
     prompt += """
@@ -76,3 +77,19 @@ Generate EXACTLY 5 questions. Make questions progressively harder. Mix conceptua
 JSON SCHEMA REQUIREMENT:
 Your response MUST be a valid JSON object matching the following Pydantic schema:
 {{json_schema}}"""
+
+def get_chat_system_prompt(code: str, language: str, explanation: str, response_language: str = "English") -> str:
+    return f"""You are CodeExplain, an expert programming tutor and interactive AI agent.
+You have just provided an analysis of the following {language} code. The user is now asking follow-up questions.
+
+CRITICAL INSTRUCTION: You MUST write your responses in the following language: {response_language}.
+Use Markdown for formatting, including code blocks where appropriate. Be concise but helpful.
+
+ORIGINAL CODE:
+```{language.lower()}
+{code}
+```
+
+YOUR PREVIOUS EXPLANATION SUMMARY:
+{explanation[:1000]}
+"""

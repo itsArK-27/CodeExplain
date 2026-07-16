@@ -12,6 +12,9 @@
   <!-- Highlight.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  
+  <!-- Marked.js for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <!-- CodeMirror 5 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
@@ -175,6 +178,28 @@
         </div>
         <div class="tabs-bar" id="tabs-bar"></div>
         <div id="tab-panels"></div>
+        
+        <!-- Follow-Up Q&A Chat -->
+        <div class="chat-container glass-card" id="chat-container">
+          <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="icon">🤖</span>
+              <span>Follow-Up Q&A</span>
+            </div>
+            <button id="chat-fullscreen-btn" class="icon-btn" title="Toggle Fullscreen" style="background: none; border: none; color: var(--text-sec); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; padding: 0.25rem; border-radius: 4px; transition: all 0.2s ease;">
+              ⛶
+            </button>
+          </div>
+          <div class="chat-history" id="chat-history">
+            <!-- Messages will be appended here -->
+          </div>
+          <div class="chat-input-area">
+            <textarea id="chat-input" class="chat-textarea" placeholder="Still confused? Ask a follow-up question..." rows="1"></textarea>
+            <button id="chat-send-btn" class="btn btn-primary chat-send-btn" disabled>
+              <span>Send</span> 🚀
+            </button>
+          </div>
+        </div>
       </div>
 
             <div class="glass-card empty-state" id="empty-state">

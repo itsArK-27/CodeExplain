@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our engine modules
-from llm_engine import generate_quiz, analyze_stream
+from llm_engine import generate_quiz, analyze_stream, chat_stream
 from utils import (
     detect_language, validate_code_input, truncate_code,
     get_sample_snippets, get_language_icon, SUPPORTED_LANGUAGES
@@ -83,7 +83,29 @@ def api_quiz():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    data = request.get_json(force=True)
+    code = data.get("code", "")
+    language = data.get("language", "Python")
+    explanation = data.get("explanation", "")
+    history = data.get("history", [])
+    response_language = data.get("response_language", "English")
 
+    if not os.getenv("GROQ_API_KEY"):
+        return jsonify({"error": "❌ GROQ_API_KEY not set in .env file."}), 500
+
+    def generate():
+        import json
+        try:
+            stream = chat_stream(code, language, explanation, history, response_language)
+            for chunk in stream:
+                yield f"data: {json.dumps(chunk)}\\n\\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\\n\\n"
+
+    from flask import Response
+    return Response(generate(), mimetype="text/event-stream")
 
 
 @app.route("/api/meta")

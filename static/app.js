@@ -9,6 +9,7 @@ const state = {
   language: "Auto-detect",
   detectedLanguage: "Python",
   samples: {},
+  chatHistory: [],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -39,6 +40,11 @@ const downloadResultsBtn = $("download-results-btn");
 const sidebarEl     = $("sidebar");
 const sidebarToggle = $("sidebar-toggle");
 
+const chatInput     = $("chat-input");
+const chatSendBtn   = $("chat-send-btn");
+const chatHistoryEl = $("chat-history");
+const chatContainer = $("chat-container");
+const chatFullscreenBtn = $("chat-fullscreen-btn");
 // Analysis options
 const opts = {
   explanation:  $("opt-explanation"),
@@ -130,6 +136,55 @@ function setupEventListeners() {
   clearBtn.addEventListener("click", clearAll);
   quizBtn.addEventListener("click", runQuiz);
   downloadResultsBtn.addEventListener("click", downloadResults);
+
+  if (chatSendBtn) chatSendBtn.addEventListener("click", sendChatMessage);
+  
+  if (chatFullscreenBtn) {
+    chatFullscreenBtn.addEventListener("click", () => {
+      if (chatContainer) {
+        const isFullscreen = chatContainer.classList.toggle("fullscreen");
+        if (isFullscreen) {
+          const placeholder = document.createElement("div");
+          placeholder.id = "chat-placeholder";
+          chatContainer.parentNode.insertBefore(placeholder, chatContainer);
+          document.body.appendChild(chatContainer);
+        } else {
+          const placeholder = document.getElementById("chat-placeholder");
+          if (placeholder) {
+            placeholder.parentNode.insertBefore(chatContainer, placeholder);
+            placeholder.remove();
+          }
+        }
+        chatFullscreenBtn.textContent = isFullscreen ? "🗗" : "⛶";
+        chatFullscreenBtn.title = isFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen";
+      }
+    });
+    
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && chatContainer && chatContainer.classList.contains("fullscreen")) {
+        chatContainer.classList.remove("fullscreen");
+        const placeholder = document.getElementById("chat-placeholder");
+        if (placeholder) {
+          placeholder.parentNode.insertBefore(chatContainer, placeholder);
+          placeholder.remove();
+        }
+        chatFullscreenBtn.textContent = "⛶";
+        chatFullscreenBtn.title = "Toggle Fullscreen";
+      }
+    });
+  }
+
+  if (chatInput) {
+    chatInput.addEventListener("input", () => {
+      chatSendBtn.disabled = chatInput.value.trim().length === 0;
+    });
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (!chatSendBtn.disabled) sendChatMessage();
+      }
+    });
+  }
 
   const themeSelect = $("theme-select");
   if (themeSelect) {
@@ -280,11 +335,20 @@ async function runAnalysis() {
             
             // Render the initial shell of the results area
             renderResultsShell(data, body.options);
+            state.chatHistory = []; // Reset chat on new analysis
+            renderChatHistory();
           } 
           else if (data.type === "explanation_chunk") {
             explanationText += data.text;
             const expEl = document.getElementById("stream-explanation");
-            if (expEl) expEl.innerHTML = escapeHtml(explanationText) + '<span class="blinking-cursor">|</span>';
+            if (expEl) {
+              if (typeof marked !== 'undefined') {
+                expEl.innerHTML = marked.parse(explanationText + '<span class="blinking-cursor">|</span>', { breaks: true });
+                if (!expEl.classList.contains("chat-markdown")) expEl.classList.add("chat-markdown");
+              } else {
+                expEl.innerHTML = escapeHtml(explanationText) + '<span class="blinking-cursor">|</span>';
+              }
+            }
           }
           else if (data.type === "complete") {
             // Merge complete data
@@ -340,7 +404,6 @@ function renderResultsShell(data, options) {
         <div class="section-title"><span class="icon">💬</span> Plain-English Explanation</div>
         <div class="section-divider"></div>
         <div class="explanation-text relative-container">
-           <button class="copy-btn" onclick="copyText('stream-explanation')">📋 Copy</button>
            <div id="stream-explanation" style="white-space:pre-wrap; min-height: 50px;"></div>
         </div>
       </div>
@@ -368,14 +431,6 @@ function renderResultsShell(data, options) {
 
   tabsBar.innerHTML = tabsHtml;
   tabPanels.innerHTML = panelsHtml;
-}
-
-function copyText(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    navigator.clipboard.writeText(el.innerText || el.textContent);
-    alert("Copied to clipboard!");
-  }
 }
 
 function renderTabsComplete(data) {
@@ -476,13 +531,19 @@ async function runQuiz() {
 
 function renderExplanation(data) {
   const text = data.explanation || "";
+  let content = text;
+  if (typeof marked !== 'undefined') {
+    content = marked.parse(content, { breaks: true });
+  } else {
+    content = escapeHtml(content);
+  }
+  
   return `
     <div class="glass-card">
       <div class="section-title"><span class="icon">💬</span> Plain-English Explanation</div>
       <div class="section-divider"></div>
       <div class="explanation-text relative-container">
-        <button class="copy-btn" onclick="copyText('exp-content')">📋 Copy</button>
-        <div id="exp-content" style="white-space:pre-wrap;">${escapeHtml(text)}</div>
+        <div id="exp-content" class="chat-markdown" style="overflow-x: auto;">${content}</div>
       </div>
     </div>`;
 }
@@ -622,15 +683,34 @@ function renderImprovements(improvements) {
     return `<div class="glass-card"><div class="section-title"><span class="icon">🚀</span> Improvements</div><div class="section-divider"></div><p style="color:var(--text-sec);text-align:center;padding:1rem">No improvements found — your code looks clean! 🎉</p></div>`;
   }
   const cards = improvements.map((imp, i) => {
-    const codeBlock = (imp.code && imp.code.toUpperCase() !== "N/A")
-      ? `<div class="relative-container" style="margin-top: 1rem;"><button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); alert('Copied!')">📋</button><pre><code class="language-python">${escapeHtml(imp.code)}</code></pre></div>` : "";
+    let diffBlock = "";
+    if (imp.original_code && imp.original_code.toUpperCase() !== "N/A" && imp.code && imp.code.toUpperCase() !== "N/A") {
+      diffBlock = `
+        <div class="diff-container" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+          <div class="diff-half" style="border: 1px solid rgba(255,107,107,0.4); border-radius: 8px; background: rgba(255,107,107,0.05); overflow: hidden;">
+            <div style="background: rgba(255,107,107,0.2); padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: bold; color: #ff8a8a;">Original</div>
+            <pre style="margin:0; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;"><code class="language-python">${escapeHtml(imp.original_code)}</code></pre>
+          </div>
+          <div class="diff-half" style="border: 1px solid rgba(0,245,160,0.4); border-radius: 8px; background: rgba(0,245,160,0.05); overflow: hidden;">
+            <div style="background: rgba(0,245,160,0.2); padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: bold; color: #00f5a0; position: relative;">
+              Improved
+              <button class="copy-btn" style="position: absolute; right: 8px; top: 2px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(0,245,160,0.4); background: rgba(0,245,160,0.1); color: #00f5a0;" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); alert('Copied!')">📋 Copy</button>
+            </div>
+            <pre style="margin:0; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;"><code class="language-python">${escapeHtml(imp.code)}</code></pre>
+          </div>
+        </div>
+      `;
+    } else if (imp.code && imp.code.toUpperCase() !== "N/A") {
+      diffBlock = `<div class="relative-container" style="margin-top: 1rem;"><button class="copy-btn" style="position: absolute; right: 8px; top: 8px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; border-radius: 4px; border: 1px solid rgba(0,245,160,0.4); background: rgba(0,245,160,0.1); color: #00f5a0;" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText); alert('Copied!')">📋 Copy</button><pre style="margin:0; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; border: 1px solid rgba(0,245,160,0.4); border-radius: 8px; background: rgba(0,245,160,0.05);"><code class="language-python">${escapeHtml(imp.code)}</code></pre></div>`;
+    }
+
     return `
       <div class="improvement-card">
         <div class="imp-num">Improvement #${i + 1}</div>
         <div class="imp-title">${escapeHtml(imp.title || "Suggestion")}</div>
         <div class="imp-detail"><strong>Issue:</strong> ${escapeHtml(imp.issue || "")}</div>
         <div class="imp-detail"><strong>Fix:</strong> ${escapeHtml(imp.fix || "")}</div>
-        ${codeBlock}
+        ${diffBlock}
       </div>`;
   }).join("");
   return `
@@ -797,9 +877,23 @@ function clearAll() {
   updateStats();
 }
 
+function getFriendlyError(msg) {
+  const msgLower = String(msg).toLowerCase();
+  
+  if (msgLower.includes("not set") || msgLower.includes("not found")) {
+    return msg; // Return original message which tells them to set it in .env
+  }
+  
+  if (msgLower.includes("api key") || msgLower.includes("quota") || msgLower.includes("429") || msgLower.includes("rate limit") || msgLower.includes("401") || msgLower.includes("403") || msgLower.includes("insufficient_quota")) {
+    return `⚠️ API Limit Reached: The API key quota has run out or is invalid. \n\nPlease note that CodeExplain is currently in its Alpha/Beta version. We appreciate your patience as we scale!`;
+  }
+  return msg;
+}
+
 function showError(msg) {
   errorBanner.style.display = "block";
-  errorMsg.textContent = msg;
+  const friendlyMsg = getFriendlyError(msg);
+  errorMsg.innerText = friendlyMsg; // Using innerText to preserve the newlines
 }
 function hideError() {
   errorBanner.style.display = "none";
@@ -985,6 +1079,104 @@ function downloadResults() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// --- Chat Logic ---
+function renderChatHistory() {
+  if (!chatHistoryEl) return;
+  chatHistoryEl.innerHTML = state.chatHistory.map(msg => {
+    let content = msg.content;
+    
+    if (msg.role !== 'user' && typeof marked !== 'undefined') {
+      content = marked.parse(content, { breaks: true });
+    } else {
+      content = escapeHtml(content);
+      content = content.replace(/\n/g, '<br>');
+    }
+    
+    return `
+      <div class="chat-bubble ${msg.role === 'user' ? 'user' : 'ai'}">
+        <div class="chat-markdown">${content}</div>
+      </div>
+    `;
+  }).join("");
+  chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+  
+  // Highlight code blocks
+  chatHistoryEl.querySelectorAll('pre code').forEach((block) => {
+    try { hljs.highlightElement(block); } catch(e){}
+  });
+}
+
+async function sendChatMessage() {
+  if (!chatInput || !state.results || !state.results.code) return;
+  const text = chatInput.value.trim();
+  if (!text) return;
+
+  // Add user msg
+  state.chatHistory.push({ role: "user", content: text });
+  chatInput.value = "";
+  chatSendBtn.disabled = true;
+  renderChatHistory();
+
+  // Add a placeholder for AI
+  const aiMsgIndex = state.chatHistory.length;
+  state.chatHistory.push({ role: "assistant", content: "..." });
+  renderChatHistory();
+
+  const body = {
+    code: state.results.code,
+    language: state.results.language,
+    explanation: state.results.explanation || "No previous explanation available.",
+    history: state.chatHistory.slice(0, -1), // exclude the placeholder
+    response_language: $("response-lang-select").value,
+  };
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(()=>({}));
+      const friendlyErr = getFriendlyError(errData.error || "Failed to get response.");
+      state.chatHistory[aiMsgIndex].content = "❌ Error: " + friendlyErr;
+      renderChatHistory();
+      return;
+    }
+
+    state.chatHistory[aiMsgIndex].content = "";
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunkStr = decoder.decode(value, { stream: true });
+      const events = chunkStr.split("\\n\\n");
+      
+      for (const ev of events) {
+        if (!ev.trim() || !ev.startsWith("data: ")) continue;
+        try {
+          const data = JSON.parse(ev.substring(6));
+          if (data.type === "chunk") {
+            state.chatHistory[aiMsgIndex].content += data.text;
+            renderChatHistory();
+          } else if (data.type === "error") {
+            const friendlyErr = getFriendlyError(data.error);
+            state.chatHistory[aiMsgIndex].content += "\\n❌ " + friendlyErr;
+            renderChatHistory();
+          }
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    state.chatHistory[aiMsgIndex].content = "❌ Network error: " + e.message;
+    renderChatHistory();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
