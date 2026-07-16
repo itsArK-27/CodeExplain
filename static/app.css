@@ -1017,3 +1017,13 @@ body.sidebar-collapsed .sidebar-toggle {
 .cm-s-vscode-dark-modern .CodeMirror-cursor { border-left: 2px solid #ffffff; }
 .cm-s-vscode-dark-modern .CodeMirror-selected { background: #264f78; }
 .cm-s-vscode-dark-modern .CodeMirror-line::selection, .cm-s-vscode-dark-modern .CodeMirror-line > span::selection, .cm-s-vscode-dark-modern .CodeMirror-line > span > span::selection { background: rgba(38, 79, 120, 0.99); }
+
+.blinking-cursor {
+  display: inline-block;
+  width: 8px;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  color: var(--accent-primary);
+  font-weight: bold;
+}
+@keyframes blink { 50% { opacity: 0; } }

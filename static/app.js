@@ -131,6 +131,15 @@ function setupEventListeners() {
   quizBtn.addEventListener("click", runQuiz);
   downloadResultsBtn.addEventListener("click", downloadResults);
 
+  const themeSelect = $("theme-select");
+  if (themeSelect) {
+    themeSelect.addEventListener("change", () => {
+      if (editor) {
+        editor.setOption("theme", themeSelect.value);
+      }
+    });
+  }
+
   const desktopCollapseBtn = $("desktop-collapse-btn");
   if (desktopCollapseBtn) {
     desktopCollapseBtn.addEventListener("click", () => {
@@ -275,7 +284,7 @@ async function runAnalysis() {
           else if (data.type === "explanation_chunk") {
             explanationText += data.text;
             const expEl = document.getElementById("stream-explanation");
-            if (expEl) expEl.textContent = explanationText;
+            if (expEl) expEl.innerHTML = escapeHtml(explanationText) + '<span class="blinking-cursor">|</span>';
           }
           else if (data.type === "complete") {
             // Merge complete data
