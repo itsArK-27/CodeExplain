@@ -15,6 +15,10 @@
 | 📝 **Line-by-Line Commentary** | Every line explained in plain English |
 | 🚀 **Smart Improvements** | Actionable suggestions for cleaner, faster code |
 | 🧠 **Quiz Mode** | Auto-generated comprehension questions with scoring |
+| 🗣️ **Interactive Q&A Chat** | Ask follow-up questions in a full-screen chat interface |
+| ⚖️ **Side-by-Side Diff Viewer** | Visually compare original code with AI suggestions |
+| 🎨 **IDE Theme Switcher** | Toggle between classic dark themes for the code editor |
+| 🖱️ **Drag-and-Drop Upload** | Quickly load code files directly from your desktop |
 | 📥 **Markdown Export** | Download your full analysis as a Markdown file |
 | 🌐 **Multi-Language** | Python, JavaScript, Java, C++, Go, Rust, and more |
 
@@ -24,6 +28,7 @@
 - **Mouse-parallax** — cards tilt to follow your cursor
 - **Click ripple** effects on every interaction
 - **Floating glow orbs** for depth and atmosphere
+- **AI Typing Effect** for streaming responses
 
 ---
 
@@ -85,6 +90,7 @@ CodeExplain/
 3. **✅ Quiz Mode** — Generates 5 comprehension questions (MCQ + True/False) with scoring, feedback, and retake option.
 4. **✅ SSE Streaming, Code Copying & Markdown Export** — Stream responses live, copy code easily, and download the full analysis as a Markdown file.
 5. **✅ Rich Syntax Editing & Highlighting** — Live coding via CodeMirror editor and rendered code highlighting using Highlight.js.
+6. **✅ Advanced UI Components** — Drag-and-drop file upload, side-by-side diff viewers, IDE theme switcher, and an interactive full-screen Q&A chat.
 
 ---
 
@@ -114,7 +120,10 @@ MIT — Free to use, modify, and distribute.
 
 ## 🚀 Future Improvements
 
-### 1. Backend Optimization & Reliability
+### 1. In-Browser Execution Sandbox (The Ultimate Flex)
+Allow users to actually *run* the code they pasted. By utilizing **Pyodide** (WebAssembly) to run Python entirely in the browser, or a simple Web Worker to run JavaScript, the console output can be displayed right next to the explanation. This turns the app from a simple AI wrapper into a full-fledged educational IDE.
+
+### 2. Backend Optimization & Reliability
 
 > [!WARNING]
 > **API Abuse Protection**
@@ -124,7 +133,7 @@ MIT — Free to use, modify, and distribute.
 *   **Response Caching**: Implement caching (e.g., using `functools.lru_cache` or `Flask-Caching`) so that if the exact same code and language settings are requested, the backend returns the cached response instead of making another Groq API call.
 *   **Granular Error Handling**: Categorize errors (e.g., "Groq API Timeout", "Parsing Error", "Rate Limit Exceeded") with appropriate HTTP status codes (429, 502, etc.) to allow the frontend to show more helpful recovery messages.
 
-### 2. Frontend Code Quality & Maintenance
+### 3. Frontend Code Quality & Maintenance
 
 > [!NOTE]
 > **Modularization**
