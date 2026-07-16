@@ -268,6 +268,8 @@ async function runAnalysis() {
   hideError();
   warnBanner.style.display = "none";
   resultsArea.style.display = "none";
+  if(document.getElementById("nav-link-results")) document.getElementById("nav-link-results").style.display = "none";
+  if(document.getElementById("nav-link-chat")) document.getElementById("nav-link-chat").style.display = "none";
   emptyState.style.display = "none";
   analyzingBanner.style.display = "block";
   analyzeBtn.disabled = true;
@@ -384,6 +386,8 @@ async function runAnalysis() {
 
 function renderResultsShell(data, options) {
   resultsArea.style.display = "block";
+  if(document.getElementById("nav-link-results")) document.getElementById("nav-link-results").style.display = "block";
+  if(document.getElementById("nav-link-chat")) document.getElementById("nav-link-chat").style.display = "block";
   emptyState.style.display = "none";
   downloadResultsBtn.style.display = "none";
 
@@ -868,6 +872,8 @@ function clearAll() {
   state.quizSubmitted = false;
   state.quizScore = 0;
   resultsArea.style.display = "none";
+  if(document.getElementById("nav-link-results")) document.getElementById("nav-link-results").style.display = "none";
+  if(document.getElementById("nav-link-chat")) document.getElementById("nav-link-chat").style.display = "none";
   emptyState.style.display = "block";
   warnBanner.style.display = "none";
   hideError();
