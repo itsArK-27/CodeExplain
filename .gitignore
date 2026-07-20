@@ -4,6 +4,17 @@ __pycache__/
 .gemini/
 .agents/
 
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+
+# Custom Scripts and Docs
 start_server.bat
 stop_server.bat
 improvement_plan.md
