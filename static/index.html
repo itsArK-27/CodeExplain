@@ -52,22 +52,28 @@
           <span class="nav-icon">📊</span> Analysis
         </button>
         <div class="nav-sub-menu" id="analyze-sub-menu">
-          <a href="#topbar-settings" class="nav-sub-item" onclick="document.querySelector('[data-view=\'analyze-view\']').click()">Settings</a>
-          <a href="#input-card" class="nav-sub-item" onclick="document.querySelector('[data-view=\'analyze-view\']').click()">Paste Code</a>
-          <a href="#results-area" class="nav-sub-item" id="nav-link-results" style="display: none;" onclick="document.querySelector('[data-view=\'analyze-view\']').click()">Results</a>
-          <a href="#chat-container" class="nav-sub-item" id="nav-link-chat" style="display: none;" onclick="document.querySelector('[data-view=\'analyze-view\']').click()">Follow-Up Q&A</a>
+          <a href="#topbar-settings" class="nav-sub-item">Settings</a>
+          <a href="#input-card" class="nav-sub-item">Paste Code</a>
+          <a href="#results-area" class="nav-sub-item" id="nav-link-results" style="display: none;">Results</a>
+          <a href="#chat-container" class="nav-sub-item" id="nav-link-chat" style="display: none;">Follow-Up Q&A</a>
         </div>
       </div>
-      <button class="nav-item" data-view="quiz-view">
-        <span class="nav-icon">🧠</span> Quiz Mode
-      </button>
+      <div class="nav-group">
+        <button class="nav-item" data-view="quiz-view">
+          <span class="nav-icon">🧠</span> Quiz Mode
+        </button>
+        <div class="nav-sub-menu" id="quiz-sub-menu">
+          <a href="#quiz-view" class="nav-sub-item">Start Quiz</a>
+          <a href="#quiz-area-container" class="nav-sub-item">Quiz Questions</a>
+        </div>
+      </div>
       <div class="nav-group">
         <button class="nav-item" data-view="leetcode-view">
           <span class="nav-icon">🏆</span> LeetCode
         </button>
         <div class="nav-sub-menu" id="leetcode-sub-menu">
-          <a href="#leetcode-input-card" class="nav-sub-item" onclick="document.querySelector('[data-view=\'leetcode-view\']').click()">Select Question</a>
-          <a href="#leetcode-results-area" class="nav-sub-item" id="nav-link-leetcode-results" style="display: none;" onclick="document.querySelector('[data-view=\'leetcode-view\']').click()">Solutions</a>
+          <a href="#leetcode-input-card" class="nav-sub-item">Select Question</a>
+          <a href="#leetcode-results-area" class="nav-sub-item" id="nav-link-leetcode-results" style="display: none;">Solutions</a>
         </div>
       </div>
       <button class="nav-item" data-view="about-view">
@@ -333,6 +339,8 @@
           <li>Line-by-line commentary for deep dive understanding.</li>
           <li>Actionable improvement suggestions to optimize performance and readability.</li>
           <li>Interactive quizzes to test comprehension.</li>
+          <li>A dedicated LeetCode mode that provides step-by-step optimization guides from Brute Force to Optimal solutions.</li>
+          <li>Interactive follow-up Q&A chat to clarify doubts.</li>
         </ul>
       </div>
     </div>

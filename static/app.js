@@ -236,6 +236,86 @@ function setupEventListeners() {
     });
   });
 
+  // Custom smooth scroll that works reliably after layout changes
+  // Temporarily disables CSS scroll-behavior to avoid browser interference
+  function smoothScrollTo(targetY, duration = 600) {
+    const html = document.documentElement;
+    const body = document.body;
+    
+    // Disable CSS smooth scrolling so it doesn't fight our animation
+    const origHtml = html.style.scrollBehavior;
+    const origBody = body.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+    body.style.scrollBehavior = 'auto';
+
+    const startY = window.pageYOffset || html.scrollTop;
+    const diff = targetY - startY;
+    if (Math.abs(diff) < 2) {
+      html.style.scrollBehavior = origHtml;
+      body.style.scrollBehavior = origBody;
+      return;
+    }
+    let startTime = null;
+
+    function easeInOutCubic(t) {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeInOutCubic(progress);
+
+      const newY = startY + diff * easedProgress;
+      window.scrollTo(0, newY);
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Restore CSS scroll-behavior
+        html.style.scrollBehavior = origHtml;
+        body.style.scrollBehavior = origBody;
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  // Smooth scroll for sub-menu items (using event delegation for dynamic links)
+  document.addEventListener("click", (e) => {
+    const subItem = e.target.closest(".nav-sub-item");
+    if (!subItem) return;
+
+    e.preventDefault();
+    
+    // Find parent nav item to activate the view first
+    const parentGroup = subItem.closest(".nav-group");
+    if (parentGroup) {
+      const parentNavItem = parentGroup.querySelector(".nav-item");
+      if (parentNavItem && !parentNavItem.classList.contains("active")) {
+        parentNavItem.click();
+      }
+    }
+
+    // Smooth scroll to target using custom animation
+    const targetId = subItem.getAttribute("href");
+    if (targetId && targetId.startsWith("#")) {
+      // Use setTimeout to let the browser fully lay out the switched view
+      setTimeout(() => {
+        const targetEl = document.querySelector(targetId);
+        if (targetEl) {
+          const headerOffset = 20;
+          const rect = targetEl.getBoundingClientRect();
+          const offsetPosition = rect.top + (window.pageYOffset || document.documentElement.scrollTop) - headerOffset;
+          smoothScrollTo(offsetPosition, 700);
+        }
+      }, 50);
+    }
+  });
+
   // Close sidebar on outside click (mobile)
   document.addEventListener("click", (e) => {
     if (window.innerWidth <= 768 &&

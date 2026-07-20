@@ -15,6 +15,7 @@
 | 📝 **Line-by-Line Commentary** | Every line explained in plain English |
 | 🚀 **Smart Improvements** | Actionable suggestions for cleaner, faster code |
 | 🧠 **Quiz Mode** | Auto-generated comprehension questions with scoring |
+| 🏆 **LeetCode Mode** | Step-by-step optimization guides from Brute Force to Optimal |
 | 🗣️ **Interactive Q&A Chat** | Ask follow-up questions in a full-screen chat interface |
 | ⚖️ **Side-by-Side Diff Viewer** | Visually compare original code with AI suggestions |
 | 🎨 **IDE Theme Switcher** | Toggle between classic dark themes for the code editor |
@@ -91,6 +92,7 @@ CodeExplain/
 4. **✅ SSE Streaming, Code Copying & Markdown Export** — Stream responses live, copy code easily, and download the full analysis as a Markdown file.
 5. **✅ Rich Syntax Editing & Highlighting** — Live coding via CodeMirror editor and rendered code highlighting using Highlight.js.
 6. **✅ Advanced UI Components** — Drag-and-drop file upload, side-by-side diff viewers, IDE theme switcher, and an interactive full-screen Q&A chat.
+7. **✅ LeetCode Mode** — Fetch solutions by question number and get step-by-step optimization guides with a dedicated Q&A chat.
 
 ---
 
@@ -109,6 +111,7 @@ CodeExplain/
 - **Auto-detect** language is enabled by default — or select manually from the topbar dropdown.
 - **Toggle sections** in the sidebar to run only what you need (Explanation, Complexity, Line-by-Line, Improvements).
 - **Quiz Mode** requires analysis to be run first.
+- **LeetCode Mode** allows you to just enter a question number to get detailed step-by-step solutions.
 - Make sure to set your `GROQ_API_KEY` in the `.env` file before starting the Flask server.
 
 ---
