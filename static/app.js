@@ -10,6 +10,8 @@ const state = {
   detectedLanguage: "Python",
   samples: {},
   chatHistory: [],
+  leetcodeData: null,
+  leetcodeChatHistory: [],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -1212,6 +1214,415 @@ async function sendChatMessage() {
     state.chatHistory[aiMsgIndex].content = "❌ Network error: " + e.message;
     renderChatHistory();
   }
+}
+
+// --- LeetCode Mode Logic ---
+const leetcodeFetchBtn = $("leetcode-fetch-btn");
+const leetcodeQuestionInput = $("leetcode-question-input");
+const leetcodeLangSelect = $("leetcode-lang-select");
+const leetcodeAnalyzingBanner = $("leetcode-analyzing-banner");
+const leetcodeErrorBanner = $("leetcode-error-banner");
+const leetcodeResultsArea = $("leetcode-results-area");
+const leetcodeStagesContainer = $("leetcode-stages-container");
+const leetcodeQuestionTitle = $("leetcode-question-title");
+
+if (leetcodeFetchBtn) {
+    leetcodeFetchBtn.addEventListener("click", runLeetCodeAnalysis);
+}
+
+async function runLeetCodeAnalysis() {
+    const questionNumber = leetcodeQuestionInput.value.trim();
+    if (!questionNumber) return;
+
+    leetcodeErrorBanner.style.display = "none";
+    leetcodeResultsArea.style.display = "none";
+    leetcodeAnalyzingBanner.style.display = "flex";
+    leetcodeFetchBtn.disabled = true;
+
+    if ($("nav-link-leetcode-results")) $("nav-link-leetcode-results").style.display = "none";
+
+    try {
+        const res = await fetch("/api/leetcode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                question_number: questionNumber,
+                language: leetcodeLangSelect.value,
+                response_language: $("response-lang-select") ? $("response-lang-select").value : "English"
+            })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(()=>({}));
+            throw new Error(errData.error || "Failed to analyze.");
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let completeData = null;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunkStr = decoder.decode(value, { stream: true });
+            const events = chunkStr.split("\n\n");
+            
+            for (const ev of events) {
+                if (!ev.trim() || !ev.startsWith("data: ")) continue;
+                try {
+                    const data = JSON.parse(ev.substring(6));
+                    if (data.type === "error") {
+                        throw new Error(data.error);
+                    } else if (data.type === "complete") {
+                        completeData = data.data;
+                    }
+                } catch(e) {
+                    if (e.message && e.message !== "Unexpected end of JSON input") throw e;
+                }
+            }
+        }
+
+        if (completeData) {
+            state.leetcodeData = completeData;
+            state.leetcodeChatHistory = [];
+            renderLeetCodeChatHistory();
+            renderLeetCodeResults(completeData);
+        } else {
+            throw new Error("No data received from the server.");
+        }
+
+    } catch (err) {
+        leetcodeErrorBanner.textContent = err.message;
+        leetcodeErrorBanner.style.display = "block";
+    } finally {
+        leetcodeAnalyzingBanner.style.display = "none";
+        leetcodeFetchBtn.disabled = false;
+    }
+}
+
+function renderLeetCodeResults(data) {
+    leetcodeQuestionTitle.textContent = data.question_title || "LeetCode Solution";
+    leetcodeStagesContainer.innerHTML = "";
+    
+    const subMenu = $("leetcode-sub-menu");
+    if (subMenu) {
+        subMenu.innerHTML = `<a href="#leetcode-input-card" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'leetcode-view\\']').click()">Select Question</a>`;
+    }
+
+    // Render Question Description and Explanation
+    if (data.question_description || data.question_explanation) {
+        const qCard = document.createElement("div");
+        qCard.className = "glass-card";
+        qCard.style.marginBottom = "2rem";
+        qCard.id = "leetcode-question-info";
+
+        const qTitle = document.createElement("h3");
+        qTitle.className = "leetcode-stage-title";
+        qTitle.innerHTML = `<span class="icon">📝</span> Question Details`;
+        qCard.appendChild(qTitle);
+
+        if (data.question_description) {
+            const desc = document.createElement("p");
+            desc.style.marginBottom = "1rem";
+            desc.style.color = "var(--text-primary)";
+            desc.style.lineHeight = "1.6";
+            desc.style.whiteSpace = "pre-wrap";
+            desc.textContent = data.question_description;
+            qCard.appendChild(desc);
+        }
+
+        if (data.question_explanation) {
+            const exp = document.createElement("div");
+            exp.style.padding = "1rem";
+            exp.style.background = "var(--bg-mid)";
+            exp.style.borderRadius = "var(--radius-sm)";
+            exp.style.color = "var(--text-sec)";
+            exp.innerHTML = `<strong>Simple Explanation:</strong><br/>${escapeHtml(data.question_explanation)}`;
+            qCard.appendChild(exp);
+        }
+        
+        leetcodeStagesContainer.appendChild(qCard);
+        
+        if (subMenu) {
+            subMenu.innerHTML += `<a href="#leetcode-question-info" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'leetcode-view\\']').click()">Question Info</a>`;
+        }
+    }
+    
+    let stageIndex = 1;
+    // Render Brute Force
+    if (data.brute_force) {
+        const id = "leetcode-stage-" + stageIndex;
+        leetcodeStagesContainer.appendChild(createLeetCodeStageEl(data.brute_force, id));
+        if (subMenu) {
+            subMenu.innerHTML += `<a href="#${id}" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'leetcode-view\\']').click()">${escapeHtml(data.brute_force.stage_name || "Brute Force")}</a>`;
+        }
+        stageIndex++;
+    }
+
+    // Render Transitions and Optimizations
+    if (data.optimizations && data.optimizations.length > 0) {
+        for (let i = 0; i < data.optimizations.length; i++) {
+            if (data.transitions && data.transitions[i]) {
+                leetcodeStagesContainer.appendChild(createLeetCodeTransitionEl(data.transitions[i]));
+            }
+            const id = "leetcode-stage-" + stageIndex;
+            leetcodeStagesContainer.appendChild(createLeetCodeStageEl(data.optimizations[i], id));
+            if (subMenu) {
+                subMenu.innerHTML += `<a href="#${id}" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'leetcode-view\\']').click()">${escapeHtml(data.optimizations[i].stage_name || "Optimization " + (i+1))}</a>`;
+            }
+            stageIndex++;
+        }
+    }
+
+    if (subMenu) {
+        subMenu.innerHTML += `<a href="#leetcode-chat-container" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'leetcode-view\\']').click()">Follow-Up Q&A</a>`;
+    }
+
+    leetcodeResultsArea.style.display = "block";
+    
+    // Highlight Code
+    document.querySelectorAll('#leetcode-stages-container pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+}
+
+function createLeetCodeStageEl(stage, id) {
+    const card = document.createElement("div");
+    card.className = "glass-card";
+    card.style.marginBottom = "2rem";
+    if (id) card.id = id;
+
+    const title = document.createElement("h3");
+    title.className = "leetcode-stage-title";
+    title.innerHTML = `<span class="icon">💻</span> ${escapeHtml(stage.stage_name || "Solution")}`;
+    card.appendChild(title);
+
+    if (stage.explanation) {
+        const exp = document.createElement("p");
+        exp.style.marginBottom = "1rem";
+        exp.style.color = "var(--text-sec)";
+        exp.style.lineHeight = "1.6";
+        exp.textContent = stage.explanation;
+        card.appendChild(exp);
+    }
+
+    if (stage.complexity) {
+        const comp = document.createElement("div");
+        comp.style.marginBottom = "1rem";
+        comp.style.padding = "1rem";
+        comp.style.background = "var(--bg-mid)";
+        comp.style.borderRadius = "var(--radius-sm)";
+        comp.innerHTML = `
+            <div><strong>Time Complexity:</strong> <span style="color: var(--accent-sec);">${escapeHtml(stage.complexity.time || "")}</span></div>
+            <div style="font-size: 0.9em; color: var(--text-sec); margin-bottom: 0.5rem;">${escapeHtml(stage.complexity.time_explanation || "")}</div>
+            <div><strong>Space Complexity:</strong> <span style="color: var(--accent-pink);">${escapeHtml(stage.complexity.space || "")}</span></div>
+            <div style="font-size: 0.9em; color: var(--text-sec);">${escapeHtml(stage.complexity.space_explanation || "")}</div>
+        `;
+        card.appendChild(comp);
+    }
+
+    if (stage.code) {
+        const pre = document.createElement("pre");
+        pre.style.margin = "1rem 0";
+        pre.style.whiteSpace = "pre-wrap"; // ensure it wraps and newlines are respected
+        pre.style.wordBreak = "break-word";
+        const code = document.createElement("code");
+        const lang = $("leetcode-lang-select") ? $("leetcode-lang-select").value.toLowerCase() : "python";
+        code.className = "language-" + (lang === "c++" ? "cpp" : lang);
+        code.textContent = stage.code;
+        pre.appendChild(code);
+        card.appendChild(pre);
+    }
+
+    if (stage.lines && stage.lines.length > 0) {
+        const linesDiv = document.createElement("div");
+        linesDiv.style.marginTop = "1rem";
+        const linesTitle = document.createElement("h4");
+        linesTitle.textContent = "Line-by-Line Breakdown";
+        linesTitle.style.marginBottom = "0.5rem";
+        linesTitle.style.color = "var(--text-main)";
+        linesDiv.appendChild(linesTitle);
+
+        stage.lines.forEach(l => {
+            const row = document.createElement("div");
+            row.style.display = "flex";
+            row.style.gap = "1rem";
+            row.style.marginBottom = "0.5rem";
+            row.style.padding = "0.5rem";
+            row.style.background = "var(--bg-deep)";
+            row.style.borderRadius = "4px";
+            row.innerHTML = `
+                <div style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; min-width: 60px;">${escapeHtml(l.line)}</div>
+                <div style="color: var(--text-sec); font-size: 0.95rem;">${escapeHtml(l.explanation)}</div>
+            `;
+            linesDiv.appendChild(row);
+        });
+        card.appendChild(linesDiv);
+    }
+
+    return card;
+}
+
+function createLeetCodeTransitionEl(text) {
+    const banner = document.createElement("div");
+    banner.className = "leetcode-transition-banner";
+    banner.innerHTML = `
+        <div class="leetcode-transition-icon">💡</div>
+        <div class="leetcode-transition-content">
+            <strong>Why optimize?</strong><br/>
+            ${escapeHtml(text)}
+        </div>
+    `;
+    return banner;
+}
+
+// --- LeetCode Chat Logic ---
+const leetcodeChatInput = $("leetcode-chat-input");
+const leetcodeChatSendBtn = $("leetcode-chat-send-btn");
+const leetcodeChatHistoryEl = $("leetcode-chat-history");
+const leetcodeChatContainer = $("leetcode-chat-container");
+const leetcodeChatFullscreenBtn = $("leetcode-chat-fullscreen-btn");
+
+if (leetcodeChatSendBtn) leetcodeChatSendBtn.addEventListener("click", sendLeetCodeChatMessage);
+if (leetcodeChatInput) {
+    leetcodeChatInput.addEventListener("input", () => {
+        leetcodeChatSendBtn.disabled = leetcodeChatInput.value.trim().length === 0;
+    });
+    leetcodeChatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!leetcodeChatSendBtn.disabled) sendLeetCodeChatMessage();
+        }
+    });
+}
+if (leetcodeChatFullscreenBtn) {
+    leetcodeChatFullscreenBtn.addEventListener("click", () => {
+        if (leetcodeChatContainer) {
+            const isFullscreen = leetcodeChatContainer.classList.toggle("fullscreen");
+            if (isFullscreen) {
+                const placeholder = document.createElement("div");
+                placeholder.id = "leetcode-chat-placeholder";
+                leetcodeChatContainer.parentNode.insertBefore(placeholder, leetcodeChatContainer);
+                document.body.appendChild(leetcodeChatContainer);
+            } else {
+                const placeholder = document.getElementById("leetcode-chat-placeholder");
+                if (placeholder) {
+                    placeholder.parentNode.insertBefore(leetcodeChatContainer, placeholder);
+                    placeholder.remove();
+                }
+            }
+            leetcodeChatFullscreenBtn.textContent = isFullscreen ? "🗗" : "⛶";
+            leetcodeChatFullscreenBtn.title = isFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen";
+        }
+    });
+    
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && leetcodeChatContainer && leetcodeChatContainer.classList.contains("fullscreen")) {
+            leetcodeChatContainer.classList.remove("fullscreen");
+            const placeholder = document.getElementById("leetcode-chat-placeholder");
+            if (placeholder) {
+                placeholder.parentNode.insertBefore(leetcodeChatContainer, placeholder);
+                placeholder.remove();
+            }
+            leetcodeChatFullscreenBtn.textContent = "⛶";
+            leetcodeChatFullscreenBtn.title = "Toggle Fullscreen";
+        }
+    });
+}
+
+function renderLeetCodeChatHistory() {
+    if (!leetcodeChatHistoryEl) return;
+    leetcodeChatHistoryEl.innerHTML = state.leetcodeChatHistory.map(msg => {
+        let content = msg.content;
+        
+        if (msg.role !== 'user' && typeof marked !== 'undefined') {
+            content = marked.parse(content, { breaks: true });
+        } else {
+            content = escapeHtml(content);
+            content = content.replace(/\n/g, '<br>');
+        }
+        
+        return `
+            <div class="chat-bubble ${msg.role === 'user' ? 'user' : 'ai'}">
+                <div class="chat-markdown">${content}</div>
+            </div>
+        `;
+    }).join("");
+    leetcodeChatHistoryEl.scrollTop = leetcodeChatHistoryEl.scrollHeight;
+    
+    leetcodeChatHistoryEl.querySelectorAll('pre code').forEach((block) => {
+        try { hljs.highlightElement(block); } catch(e){}
+    });
+}
+
+async function sendLeetCodeChatMessage() {
+    if (!leetcodeChatInput || !state.leetcodeData) return;
+    const text = leetcodeChatInput.value.trim();
+    if (!text) return;
+
+    state.leetcodeChatHistory.push({ role: "user", content: text });
+    leetcodeChatInput.value = "";
+    leetcodeChatSendBtn.disabled = true;
+    renderLeetCodeChatHistory();
+
+    const aiMsgIndex = state.leetcodeChatHistory.length;
+    state.leetcodeChatHistory.push({ role: "assistant", content: "..." });
+    renderLeetCodeChatHistory();
+
+    const body = {
+        question_title: state.leetcodeData.question_title || "Unknown Question",
+        question_description: state.leetcodeData.question_description || "",
+        context_json_str: JSON.stringify(state.leetcodeData),
+        history: state.leetcodeChatHistory.slice(0, -1),
+        response_language: $("response-lang-select") ? $("response-lang-select").value : "English"
+    };
+
+    try {
+        const res = await fetch("/api/leetcode_chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(()=>({}));
+            const friendlyErr = getFriendlyError(errData.error || "Failed to get response.");
+            state.leetcodeChatHistory[aiMsgIndex].content = "❌ Error: " + friendlyErr;
+            renderLeetCodeChatHistory();
+            return;
+        }
+
+        state.leetcodeChatHistory[aiMsgIndex].content = "";
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunkStr = decoder.decode(value, { stream: true });
+            const events = chunkStr.split("\n\n");
+            
+            for (const ev of events) {
+                if (!ev.trim() || !ev.startsWith("data: ")) continue;
+                try {
+                    const data = JSON.parse(ev.substring(6));
+                    if (data.type === "chunk") {
+                        state.leetcodeChatHistory[aiMsgIndex].content += data.text;
+                        renderLeetCodeChatHistory();
+                    } else if (data.type === "error") {
+                        const friendlyErr = getFriendlyError(data.error);
+                        state.leetcodeChatHistory[aiMsgIndex].content += "\n❌ " + friendlyErr;
+                        renderLeetCodeChatHistory();
+                    }
+                } catch(e) {}
+            }
+        }
+    } catch(e) {
+        state.leetcodeChatHistory[aiMsgIndex].content = "❌ Network error: " + e.message;
+        renderLeetCodeChatHistory();
+    }
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our engine modules
-from llm_engine import generate_quiz, analyze_stream, chat_stream
+from llm_engine import generate_quiz, analyze_stream, chat_stream, generate_leetcode_stream, generate_leetcode_chat_stream
 from utils import (
     detect_language, validate_code_input, truncate_code,
     get_sample_snippets, get_language_icon, SUPPORTED_LANGUAGES
@@ -103,6 +103,55 @@ def api_chat():
                 yield f"data: {json.dumps(chunk)}\\n\\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\\n\\n"
+
+    from flask import Response
+    return Response(generate(), mimetype="text/event-stream")
+
+@app.route("/api/leetcode", methods=["POST"])
+def api_leetcode():
+    data = request.get_json(force=True)
+    question_number = data.get("question_number", "")
+    language = data.get("language", "Python")
+    response_language = data.get("response_language", "English")
+
+    if not question_number:
+        return jsonify({"error": "Question number is required."}), 400
+
+    if not os.getenv("GROQ_API_KEY"):
+        return jsonify({"error": "❌ GROQ_API_KEY not set in .env file."}), 500
+
+    def generate():
+        import json
+        try:
+            stream = generate_leetcode_stream(question_number, language, response_language)
+            for chunk in stream:
+                yield f"data: {json.dumps(chunk)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    from flask import Response
+    return Response(generate(), mimetype="text/event-stream")
+
+@app.route("/api/leetcode_chat", methods=["POST"])
+def api_leetcode_chat():
+    data = request.get_json(force=True)
+    question_title = data.get("question_title", "")
+    question_description = data.get("question_description", "")
+    context_json_str = data.get("context_json_str", "")
+    history = data.get("history", [])
+    response_language = data.get("response_language", "English")
+
+    if not os.getenv("GROQ_API_KEY"):
+        return jsonify({"error": "❌ GROQ_API_KEY not set in .env file."}), 500
+
+    def generate():
+        import json
+        try:
+            stream = generate_leetcode_chat_stream(question_title, question_description, context_json_str, history, response_language)
+            for chunk in stream:
+                yield f"data: {json.dumps(chunk)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
 
     from flask import Response
     return Response(generate(), mimetype="text/event-stream")

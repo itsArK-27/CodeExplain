@@ -1416,3 +1416,43 @@ body.sidebar-collapsed .sidebar-toggle {
   align-self: flex-end;
   flex: none !important;
 }
+
+.leetcode-transition-banner {
+  background: rgba(255, 169, 49, 0.1);
+  border: 1px solid rgba(255, 169, 49, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  margin: 2rem 0;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+}
+
+.leetcode-transition-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: var(--accent-orange);
+}
+
+.leetcode-transition-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.leetcode-transition-content {
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.leetcode-stage-title {
+  color: var(--accent-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

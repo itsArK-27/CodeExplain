@@ -10,6 +10,8 @@ from prompts import (
     get_full_analysis_prompt,
     get_quiz_prompt,
     get_chat_system_prompt,
+    get_leetcode_prompt,
+    get_leetcode_chat_system_prompt,
 )
 
 load_dotenv()
@@ -69,6 +71,22 @@ class QuizQuestion(BaseModel):
 
 class Quiz(BaseModel):
     questions: list[QuizQuestion]
+
+
+class LeetCodeSolution(BaseModel):
+    stage_name: str = Field(description="Name of this stage (e.g., 'Brute Force', 'Optimal')")
+    code: str = Field(description="The code implementation")
+    explanation: str = Field(description="Explanation of the approach")
+    complexity: Complexity = Field(description="Time and space complexity")
+    lines: list[LineComment] = Field(description="Line-by-line commentary")
+
+class LeetCodeAnalysis(BaseModel):
+    question_title: str = Field(description="The exact title of the LeetCode question")
+    question_description: str = Field(description="The original problem statement as it appears on LeetCode")
+    question_explanation: str = Field(description="A simple plain-English explanation of what the question is asking")
+    brute_force: LeetCodeSolution = Field(description="The initial brute force solution")
+    transitions: list[str] = Field(description="List of transition strings explaining why we optimize the previous solution. e.g., ['But previous solution lacks this...']")
+    optimizations: list[LeetCodeSolution] = Field(description="List of optimized solutions in order of efficiency. There should be exactly as many optimizations as there are transitions.")
 
 
 
@@ -182,4 +200,63 @@ def chat_stream(code: str, language: str, explanation: str, history: list, respo
                 
         yield {"type": "done"}
     except Exception as e:
-        yield {"type": "error", "error": str(e)}
+        yield {"type": "error", "error": f"Failed to get chat response: {e}"}
+
+def generate_leetcode_chat_stream(question_title: str, question_description: str, context_json_str: str, history: list, response_language: str = "English"):
+    client = _get_client()
+    system_prompt_content = get_leetcode_chat_system_prompt(question_title, question_description, context_json_str, response_language)
+    
+    messages = [{"role": "system", "content": system_prompt_content}]
+    
+    for msg in history:
+        messages.append({"role": msg.get("role"), "content": msg.get("content")})
+        
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=True
+        )
+        
+        for chunk in response:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield {"type": "chunk", "text": delta}
+                
+        yield {"type": "done"}
+    except Exception as e:
+        yield {"type": "error", "error": f"Failed to get leetcode chat response: {e}"}
+
+def generate_leetcode_stream(question_number: str, language: str, response_language: str = "English"):
+    client = _get_client()
+    
+    schema = json.dumps(LeetCodeAnalysis.model_json_schema(), indent=2)
+    prompt = get_leetcode_prompt(question_number, language, response_language).replace("{json_schema}", schema)
+    
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=4096,
+        response_format={"type": "json_object"},
+        stream=True
+    )
+    
+    full_content = ""
+    for chunk in response:
+        delta = chunk.choices[0].delta.content or ""
+        full_content += delta
+        # We can yield a simple progress ping so the frontend knows it's working
+        if delta:
+             yield {"type": "ping"}
+                
+    try:
+        parsed_data = LeetCodeAnalysis.model_validate_json(full_content)
+        yield {"type": "complete", "data": parsed_data.model_dump()}
+    except Exception as e:
+        yield {"type": "error", "error": f"Failed to parse output: {e}"}
