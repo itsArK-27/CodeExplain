@@ -1726,6 +1726,138 @@ if (githubAnalyzeBtn) {
     githubAnalyzeBtn.addEventListener("click", runGithubAnalysis);
 }
 
+async function fetchGithubFileTree(url) {
+    const sidebar = $("github-file-tree-sidebar");
+    if (!sidebar) return;
+    
+    sidebar.innerHTML = '<div style="padding: 1rem; color: var(--text-sec); text-align: center;">Fetching file tree...</div>';
+    
+    const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!match) {
+        sidebar.innerHTML = '<div style="padding: 1rem; color: var(--text-sec); text-align: center;">Invalid GitHub URL</div>';
+        return;
+    }
+    
+    const owner = match[1];
+    let repo = match[2];
+    if (repo.endsWith('.git')) repo = repo.slice(0, -4);
+    
+    try {
+        const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+        if (!repoRes.ok) throw new Error("Repo fetch failed");
+        const repoData = await repoRes.json();
+        const branch = repoData.default_branch || 'main';
+        
+        const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
+        if (!treeRes.ok) throw new Error("Tree fetch failed");
+        const treeData = await treeRes.json();
+        
+        renderFileTree(treeData.tree, sidebar, repo);
+    } catch (e) {
+        sidebar.innerHTML = `<div style="padding: 1rem; color: #ff5555; text-align: center;">Failed to load file tree.</div>`;
+    }
+}
+
+function renderFileTree(flatTree, container, repoName) {
+    // Build nested structure
+    const root = { name: repoName, type: 'tree', children: {} };
+    
+    for (const item of flatTree) {
+        const parts = item.path.split('/');
+        let current = root;
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!current.children[part]) {
+                current.children[part] = { 
+                    name: part, 
+                    type: i === parts.length - 1 ? item.type : 'tree', 
+                    children: {} 
+                };
+            }
+            current = current.children[part];
+        }
+    }
+    
+    // Sort tree (folders first, then files, alphabetically)
+    function sortTree(node) {
+        const sortedChildren = Object.values(node.children).sort((a, b) => {
+            if (a.type === 'tree' && b.type !== 'tree') return -1;
+            if (a.type !== 'tree' && b.type === 'tree') return 1;
+            return a.name.localeCompare(b.name);
+        });
+        node.sortedChildren = sortedChildren;
+        for (const child of sortedChildren) {
+            if (child.type === 'tree') sortTree(child);
+        }
+    }
+    sortTree(root);
+    
+    // Create DOM recursively
+    function createDOM(node, isRoot = false) {
+        const ul = document.createElement('ul');
+        ul.className = isRoot ? 'file-tree-list root-list' : 'file-tree-list';
+        
+        for (const child of node.sortedChildren) {
+            const li = document.createElement('li');
+            li.className = 'file-tree-item';
+            
+            const content = document.createElement('div');
+            content.className = 'file-tree-content';
+            
+            const icon = document.createElement('span');
+            icon.className = 'file-tree-icon';
+            
+            // Map common file types to icons
+            let iconStr = '📄';
+            if (child.type === 'tree') {
+                iconStr = '📁';
+            } else {
+                const ext = child.name.split('.').pop().toLowerCase();
+                const iconMap = {
+                    'js': '🟨', 'jsx': '⚛️', 'ts': '🟦', 'tsx': '⚛️',
+                    'py': '🐍', 'html': '🌐', 'css': '🎨', 'json': '📋',
+                    'md': '📝', 'go': '🐹', 'java': '☕', 'cpp': '⚙️',
+                    'c': '⚙️', 'rs': '🦀', 'rb': '💎', 'php': '🐘',
+                    'yml': '🔧', 'yaml': '🔧', 'xml': '📋', 'svg': '🖼️',
+                    'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️',
+                };
+                iconStr = iconMap[ext] || '📄';
+            }
+            icon.textContent = iconStr;
+            
+            const text = document.createElement('span');
+            text.textContent = child.name;
+            
+            content.appendChild(icon);
+            content.appendChild(text);
+            li.appendChild(content);
+            
+            if (child.type === 'tree') {
+                li.classList.add('file-tree-folder');
+                const childrenDOM = createDOM(child);
+                // Collapse directories by default if not root level
+                if (!isRoot) {
+                    childrenDOM.style.display = 'none';
+                } else {
+                    icon.textContent = '📂'; // open folder icon for top level
+                }
+                li.appendChild(childrenDOM);
+                
+                content.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    childrenDOM.style.display = childrenDOM.style.display === 'none' ? 'block' : 'none';
+                    icon.textContent = childrenDOM.style.display === 'none' ? '📁' : '📂';
+                });
+            }
+            ul.appendChild(li);
+        }
+        return ul;
+    }
+    
+    container.innerHTML = `<h3 style="margin-top: 0; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size: 1.2rem;">🐙</span> ${repoName}</h3>`;
+    container.appendChild(createDOM(root, true));
+}
+
 async function runGithubAnalysis() {
     const url = githubUrlInput ? githubUrlInput.value.trim() : "";
     if (!url.startsWith("https://github.com/")) {
@@ -1740,6 +1872,9 @@ async function runGithubAnalysis() {
     if (githubResultsArea) githubResultsArea.style.display = "none";
     if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "flex";
     if (githubAnalyzeBtn) githubAnalyzeBtn.disabled = true;
+
+    // Start fetching file tree asynchronously
+    fetchGithubFileTree(url);
 
     if (githubOverviewContainer) githubOverviewContainer.innerHTML = "";
     state.githubContext = "";

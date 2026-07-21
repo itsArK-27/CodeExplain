@@ -1522,3 +1522,87 @@ body.sidebar-collapsed .sidebar-toggle {
   padding: 0;
   color: inherit;
 }
+
+/* GitHub Split View */
+.github-split-view {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.github-sidebar {
+  flex: 0 0 300px;
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.github-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.github-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.github-main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* File Tree Styles */
+.file-tree-list {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.file-tree-list.root-list {
+  padding-left: 0;
+}
+
+.file-tree-item {
+  margin: 0.2rem 0;
+  color: var(--text-sec);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.file-tree-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  cursor: default;
+  transition: background 0.2s;
+}
+
+.file-tree-content:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.file-tree-icon {
+  font-size: 1rem;
+}
+
+.file-tree-folder > .file-tree-content {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .github-split-view {
+    flex-direction: column;
+  }
+  .github-sidebar {
+    flex: none;
+    width: 100%;
+    position: static;
+    max-height: 400px;
+  }
+}
