@@ -1893,6 +1893,9 @@ async function runGithubAnalysis() {
     if (githubResultsArea) githubResultsArea.style.display = "none";
     if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "flex";
     if (githubAnalyzeBtn) githubAnalyzeBtn.disabled = true;
+    
+    const analyzingText = $("github-analyzing-text");
+    if (analyzingText) analyzingText.textContent = "Connecting to backend...";
 
     // Start fetching file tree asynchronously
     fetchGithubFileTree(url);
@@ -1942,7 +1945,10 @@ async function runGithubAnalysis() {
                     data = JSON.parse(ev.substring(6));
                 } catch(e) { continue; }
                 
-                if (data.type === "context") {
+                if (data.type === "status") {
+                    const analyzingText = $("github-analyzing-text");
+                    if (analyzingText) analyzingText.textContent = data.message;
+                } else if (data.type === "context") {
                     state.githubContext = data.repo_context;
                 } else if (data.type === "chunk") {
                     markdownText += data.text;

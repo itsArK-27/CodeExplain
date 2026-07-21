@@ -167,7 +167,8 @@ def api_meta():
         "has_key": bool(os.getenv("GROQ_API_KEY")),
     })
 
-def clone_and_parse_github_repo(url: str, max_chars=30000) -> str:
+def clone_and_parse_github_repo_stream(url: str, max_chars=30000):
+    yield {"type": "status", "message": "Cloning repository..."}
     with tempfile.TemporaryDirectory() as temp_dir:
         # Clone repo
         try:
@@ -175,6 +176,7 @@ def clone_and_parse_github_repo(url: str, max_chars=30000) -> str:
         except subprocess.CalledProcessError as e:
             raise Exception(f"Failed to clone repository: {e.stderr}")
             
+        yield {"type": "status", "message": "Parsing file structure..."}
         repo_context = ""
         ignored_dirs = {".git", "node_modules", "venv", "__pycache__", "dist", "build"}
         ignored_exts = {".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".exe", ".ico", ".svg", ".lock"}
@@ -195,9 +197,12 @@ def clone_and_parse_github_repo(url: str, max_chars=30000) -> str:
                 
                 if len(repo_context) > max_chars:
                     repo_context = repo_context[:max_chars] + "\n...[TRUNCATED]..."
-                    return repo_context
+                    yield {"type": "status", "message": "Analyzing architecture..."}
+                    yield {"type": "context", "repo_context": repo_context}
+                    return
                     
-        return repo_context
+        yield {"type": "status", "message": "Analyzing architecture..."}
+        yield {"type": "context", "repo_context": repo_context}
 
 @app.route("/api/github_analyze", methods=["POST"])
 def api_github_analyze():
@@ -214,8 +219,13 @@ def api_github_analyze():
     def generate():
         import json
         try:
-            repo_context = clone_and_parse_github_repo(url)
-            yield f"data: {json.dumps({'type': 'context', 'repo_context': repo_context})}\n\n"
+            repo_context = ""
+            for item in clone_and_parse_github_repo_stream(url):
+                if item["type"] == "status":
+                    yield f"data: {json.dumps(item)}\n\n"
+                elif item["type"] == "context":
+                    repo_context = item["repo_context"]
+                    yield f"data: {json.dumps(item)}\n\n"
             
             stream = generate_github_analysis_stream(repo_context, response_language)
             for chunk in stream:
