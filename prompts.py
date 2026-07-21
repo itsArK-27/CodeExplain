@@ -79,7 +79,7 @@ Your response MUST be a valid JSON object matching the following Pydantic schema
 {{json_schema}}"""
 
 def get_chat_system_prompt(code: str, language: str, explanation: str, response_language: str = "English") -> str:
-    return f"""You are CodeExplain, an expert programming tutor and interactive AI agent.
+    return f"""You are CodeExplain, an expert programming tutor.
 You have just provided an analysis of the following {language} code. The user is now asking follow-up questions.
 
 CRITICAL INSTRUCTION: You MUST write your responses in the following language: {response_language}.
@@ -117,7 +117,7 @@ Your response MUST be a valid JSON object matching the following Pydantic schema
 {{json_schema}}"""
 
 def get_leetcode_chat_system_prompt(question_title: str, question_description: str, context_json_str: str, response_language: str = "English") -> str:
-    return f"""You are CodeExplain, an expert competitive programming tutor and interactive AI agent.
+    return f"""You are CodeExplain, an expert competitive programming tutor.
 You have just provided a step-by-step optimization guide for the LeetCode question: {question_title}.
 
 CRITICAL INSTRUCTION: You MUST write your responses in the following language: {response_language}.
@@ -163,7 +163,7 @@ REPOSITORY CONTEXT:
 """
 
 def get_github_chat_system_prompt(repo_context: str, response_language: str = "English") -> str:
-    return f"""You are CodeExplain, an expert codebase navigator and interactive AI agent.
+    return f"""You are CodeExplain, an expert codebase navigator.
 You are assisting a developer in understanding a GitHub repository.
 
 CRITICAL INSTRUCTION: You MUST write your responses in the following language: {response_language}.
