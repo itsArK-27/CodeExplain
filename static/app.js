@@ -1715,6 +1715,7 @@ const githubAnalyzingBanner = $("github-analyzing-banner");
 const githubErrorBanner = $("github-error-banner");
 const githubResultsArea = $("github-results-area");
 const githubOverviewContainer = $("github-overview-container");
+const githubDownloadBtn = $("github-download-btn");
 
 const githubChatInput = $("github-chat-input");
 const githubChatSendBtn = $("github-chat-send-btn");
@@ -1724,6 +1725,9 @@ const githubChatFullscreenBtn = $("github-chat-fullscreen-btn");
 
 if (githubAnalyzeBtn) {
     githubAnalyzeBtn.addEventListener("click", runGithubAnalysis);
+}
+if (githubDownloadBtn) {
+    githubDownloadBtn.addEventListener("click", downloadGithubAnalysis);
 }
 
 function renderGithubStats(repoData) {
@@ -1896,6 +1900,7 @@ async function runGithubAnalysis() {
     
     const analyzingText = $("github-analyzing-text");
     if (analyzingText) analyzingText.textContent = "Connecting to backend...";
+    if (githubDownloadBtn) githubDownloadBtn.style.display = "none";
 
     // Start fetching file tree asynchronously
     fetchGithubFileTree(url);
@@ -1903,6 +1908,7 @@ async function runGithubAnalysis() {
     if (githubOverviewContainer) githubOverviewContainer.innerHTML = "";
     state.githubContext = "";
     state.githubChatHistory = [];
+    state.githubMarkdownText = "";
     renderGithubChatHistory();
 
     try {
@@ -1927,7 +1933,6 @@ async function runGithubAnalysis() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         
-        let markdownText = "";
         let buffer = "";
 
         while (true) {
@@ -1951,9 +1956,9 @@ async function runGithubAnalysis() {
                 } else if (data.type === "context") {
                     state.githubContext = data.repo_context;
                 } else if (data.type === "chunk") {
-                    markdownText += data.text;
+                    state.githubMarkdownText += data.text;
                     if (typeof marked !== 'undefined' && githubOverviewContainer) {
-                        githubOverviewContainer.innerHTML = marked.parse(markdownText, { breaks: true });
+                        githubOverviewContainer.innerHTML = marked.parse(state.githubMarkdownText, { breaks: true });
                         githubOverviewContainer.querySelectorAll('pre code').forEach((block) => {
                             try { hljs.highlightElement(block); } catch(e){}
                         });
@@ -1963,6 +1968,7 @@ async function runGithubAnalysis() {
                 }
             }
         }
+        if (githubDownloadBtn) githubDownloadBtn.style.display = "inline-flex";
     } catch (e) {
         if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "none";
         if (githubErrorBanner) {
@@ -1972,6 +1978,31 @@ async function runGithubAnalysis() {
     } finally {
         if (githubAnalyzeBtn) githubAnalyzeBtn.disabled = false;
     }
+}
+
+function downloadGithubAnalysis() {
+    if (!state.githubMarkdownText) return;
+    
+    const url = githubUrlInput ? githubUrlInput.value.trim() : "";
+    let repoName = "Repository";
+    if (url) {
+        const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+        if (match) {
+            repoName = match[2].endsWith('.git') ? match[2].slice(0, -4) : match[2];
+        }
+    }
+    
+    const content = `# CodeExplain - ${repoName} Analysis\n\n${state.githubMarkdownText}`;
+    
+    const blob = new Blob([content], { type: "text/markdown" });
+    const urlBlob = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = urlBlob;
+    a.download = `${repoName}_Analysis.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(urlBlob);
 }
 
 // GitHub Chat
