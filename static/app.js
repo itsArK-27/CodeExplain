@@ -1705,4 +1705,253 @@ async function sendLeetCodeChatMessage() {
     }
 }
 
+// --- GitHub Repository Analysis Logic ---
+state.githubContext = "";
+state.githubChatHistory = [];
+
+const githubUrlInput = $("github-url-input");
+const githubAnalyzeBtn = $("github-analyze-btn");
+const githubAnalyzingBanner = $("github-analyzing-banner");
+const githubErrorBanner = $("github-error-banner");
+const githubResultsArea = $("github-results-area");
+const githubOverviewContainer = $("github-overview-container");
+
+const githubChatInput = $("github-chat-input");
+const githubChatSendBtn = $("github-chat-send-btn");
+const githubChatHistoryEl = $("github-chat-history");
+const githubChatContainer = $("github-chat-container");
+const githubChatFullscreenBtn = $("github-chat-fullscreen-btn");
+
+if (githubAnalyzeBtn) {
+    githubAnalyzeBtn.addEventListener("click", runGithubAnalysis);
+}
+
+async function runGithubAnalysis() {
+    const url = githubUrlInput ? githubUrlInput.value.trim() : "";
+    if (!url.startsWith("https://github.com/")) {
+        if (githubErrorBanner) {
+            githubErrorBanner.textContent = "Please enter a valid GitHub repository URL.";
+            githubErrorBanner.style.display = "block";
+        }
+        return;
+    }
+
+    if (githubErrorBanner) githubErrorBanner.style.display = "none";
+    if (githubResultsArea) githubResultsArea.style.display = "none";
+    if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "flex";
+    if (githubAnalyzeBtn) githubAnalyzeBtn.disabled = true;
+
+    if (githubOverviewContainer) githubOverviewContainer.innerHTML = "";
+    state.githubContext = "";
+    state.githubChatHistory = [];
+    renderGithubChatHistory();
+
+    try {
+        const body = {
+            url: url,
+            response_language: $("response-lang-select") ? $("response-lang-select").value : "English"
+        };
+        const res = await fetch("/api/github_analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(()=>({}));
+            throw new Error(errData.error || "Failed to analyze repository.");
+        }
+
+        if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "none";
+        if (githubResultsArea) githubResultsArea.style.display = "block";
+        
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        
+        let markdownText = "";
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split("\n\n");
+            buffer = events.pop();
+            
+            for (const ev of events) {
+                if (!ev.trim() || !ev.startsWith("data: ")) continue;
+                let data;
+                try {
+                    data = JSON.parse(ev.substring(6));
+                } catch(e) { continue; }
+                
+                if (data.type === "context") {
+                    state.githubContext = data.repo_context;
+                } else if (data.type === "chunk") {
+                    markdownText += data.text;
+                    if (typeof marked !== 'undefined' && githubOverviewContainer) {
+                        githubOverviewContainer.innerHTML = marked.parse(markdownText, { breaks: true });
+                        githubOverviewContainer.querySelectorAll('pre code').forEach((block) => {
+                            try { hljs.highlightElement(block); } catch(e){}
+                        });
+                    }
+                } else if (data.type === "error") {
+                    throw new Error(data.error);
+                }
+            }
+        }
+    } catch (e) {
+        if (githubAnalyzingBanner) githubAnalyzingBanner.style.display = "none";
+        if (githubErrorBanner) {
+            githubErrorBanner.textContent = "❌ " + e.message;
+            githubErrorBanner.style.display = "block";
+        }
+    } finally {
+        if (githubAnalyzeBtn) githubAnalyzeBtn.disabled = false;
+    }
+}
+
+// GitHub Chat
+if (githubChatSendBtn) githubChatSendBtn.addEventListener("click", sendGithubChatMessage);
+if (githubChatInput) {
+    githubChatInput.addEventListener("input", () => {
+        githubChatSendBtn.disabled = githubChatInput.value.trim().length === 0;
+    });
+    githubChatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!githubChatSendBtn.disabled) sendGithubChatMessage();
+        }
+    });
+}
+if (githubChatFullscreenBtn) {
+    githubChatFullscreenBtn.addEventListener("click", () => {
+        if (githubChatContainer) {
+            const isFullscreen = githubChatContainer.classList.toggle("fullscreen");
+            if (isFullscreen) {
+                const placeholder = document.createElement("div");
+                placeholder.id = "github-chat-placeholder";
+                githubChatContainer.parentNode.insertBefore(placeholder, githubChatContainer);
+                document.body.appendChild(githubChatContainer);
+            } else {
+                const placeholder = document.getElementById("github-chat-placeholder");
+                if (placeholder) {
+                    placeholder.parentNode.insertBefore(githubChatContainer, placeholder);
+                    placeholder.remove();
+                }
+            }
+            githubChatFullscreenBtn.textContent = isFullscreen ? "🗗" : "⛶";
+            githubChatFullscreenBtn.title = isFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen";
+        }
+    });
+    
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && githubChatContainer && githubChatContainer.classList.contains("fullscreen")) {
+            githubChatContainer.classList.remove("fullscreen");
+            const placeholder = document.getElementById("github-chat-placeholder");
+            if (placeholder) {
+                placeholder.parentNode.insertBefore(githubChatContainer, placeholder);
+                placeholder.remove();
+            }
+            githubChatFullscreenBtn.textContent = "⛶";
+            githubChatFullscreenBtn.title = "Toggle Fullscreen";
+        }
+    });
+}
+
+function renderGithubChatHistory() {
+    if (!githubChatHistoryEl) return;
+    githubChatHistoryEl.innerHTML = state.githubChatHistory.map(msg => {
+        let content = msg.content;
+        
+        if (msg.role !== 'user' && typeof marked !== 'undefined') {
+            content = marked.parse(content, { breaks: true });
+        } else {
+            content = escapeHtml(content);
+            content = content.replace(/\n/g, '<br>');
+        }
+        
+        return `
+            <div class="chat-bubble ${msg.role === 'user' ? 'user' : 'ai'}">
+                <div class="chat-markdown">${content}</div>
+            </div>
+        `;
+    }).join("");
+    githubChatHistoryEl.scrollTop = githubChatHistoryEl.scrollHeight;
+    
+    githubChatHistoryEl.querySelectorAll('pre code').forEach((block) => {
+        try { hljs.highlightElement(block); } catch(e){}
+    });
+}
+
+async function sendGithubChatMessage() {
+    if (!githubChatInput || !state.githubContext) return;
+    const text = githubChatInput.value.trim();
+    if (!text) return;
+
+    state.githubChatHistory.push({ role: "user", content: text });
+    githubChatInput.value = "";
+    githubChatSendBtn.disabled = true;
+    renderGithubChatHistory();
+
+    const aiMsgIndex = state.githubChatHistory.length;
+    state.githubChatHistory.push({ role: "assistant", content: "..." });
+    renderGithubChatHistory();
+
+    const body = {
+        repo_context: state.githubContext,
+        history: state.githubChatHistory.slice(0, -1),
+        response_language: $("response-lang-select") ? $("response-lang-select").value : "English"
+    };
+
+    try {
+        const res = await fetch("/api/github_chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(()=>({}));
+            const friendlyErr = getFriendlyError(errData.error || "Failed to get response.");
+            state.githubChatHistory[aiMsgIndex].content = "❌ Error: " + friendlyErr;
+            renderGithubChatHistory();
+            return;
+        }
+
+        state.githubChatHistory[aiMsgIndex].content = "";
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        
+        let buffer = "";
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split("\n\n");
+            buffer = events.pop();
+            
+            for (const ev of events) {
+                if (!ev.trim() || !ev.startsWith("data: ")) continue;
+                try {
+                    const data = JSON.parse(ev.substring(6));
+                    if (data.type === "chunk") {
+                        state.githubChatHistory[aiMsgIndex].content += data.text;
+                        renderGithubChatHistory();
+                    } else if (data.type === "error") {
+                        const friendlyErr = getFriendlyError(data.error);
+                        state.githubChatHistory[aiMsgIndex].content += "\n❌ " + friendlyErr;
+                        renderGithubChatHistory();
+                    }
+                } catch(e) {}
+            }
+        }
+    } catch(e) {
+        state.githubChatHistory[aiMsgIndex].content = "❌ Network error: " + e.message;
+        renderGithubChatHistory();
+    }
+}
+
 document.addEventListener("DOMContentLoaded", init);

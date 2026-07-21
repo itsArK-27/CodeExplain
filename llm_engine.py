@@ -12,6 +12,8 @@ from prompts import (
     get_chat_system_prompt,
     get_leetcode_prompt,
     get_leetcode_chat_system_prompt,
+    get_github_analysis_prompt,
+    get_github_chat_system_prompt,
 )
 
 load_dotenv()
@@ -260,3 +262,55 @@ def generate_leetcode_stream(question_number: str, language: str, response_langu
         yield {"type": "complete", "data": parsed_data.model_dump()}
     except Exception as e:
         yield {"type": "error", "error": f"Failed to parse output: {e}"}
+
+def generate_github_analysis_stream(repo_context: str, response_language: str = "English"):
+    client = _get_client()
+    
+    prompt = get_github_analysis_prompt(repo_context, response_language)
+    
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=4096,
+            stream=True
+        )
+        
+        for chunk in response:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield {"type": "chunk", "text": delta}
+                
+        yield {"type": "done"}
+    except Exception as e:
+        yield {"type": "error", "error": f"Failed to get github analysis: {e}"}
+
+def generate_github_chat_stream(repo_context: str, history: list, response_language: str = "English"):
+    client = _get_client()
+    system_prompt_content = get_github_chat_system_prompt(repo_context, response_language)
+    
+    messages = [{"role": "system", "content": system_prompt_content}]
+    
+    for msg in history:
+        messages.append({"role": msg.get("role"), "content": msg.get("content")})
+        
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=True
+        )
+        
+        for chunk in response:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield {"type": "chunk", "text": delta}
+                
+        yield {"type": "done"}
+    except Exception as e:
+        yield {"type": "error", "error": f"Failed to get github chat response: {e}"}

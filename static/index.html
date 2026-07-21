@@ -76,6 +76,15 @@
           <a href="#leetcode-results-area" class="nav-sub-item" id="nav-link-leetcode-results" style="display: none;">Solutions</a>
         </div>
       </div>
+      <div class="nav-group">
+        <button class="nav-item" data-view="github-view">
+          <span class="nav-icon">🐙</span> GitHub
+        </button>
+        <div class="nav-sub-menu" id="github-sub-menu">
+          <a href="#github-input-card" class="nav-sub-item">Paste Repo</a>
+          <a href="#github-results-area" class="nav-sub-item" id="nav-link-github-results" style="display: none;">Analysis</a>
+        </div>
+      </div>
       <button class="nav-item" data-view="about-view">
         <span class="nav-icon">ℹ️</span> About
       </button>
@@ -318,6 +327,66 @@
           <div class="chat-input-area">
             <textarea id="leetcode-chat-input" class="chat-textarea" placeholder="Still confused? Ask a follow-up question..." rows="1"></textarea>
             <button id="leetcode-chat-send-btn" class="btn btn-primary chat-send-btn" disabled>
+              <span>Send</span> 🚀
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub View -->
+    <div id="github-view" class="view-container" style="display:none">
+      <section class="hero-section">
+        <div class="hero-badge">🐙 Repository Intelligence</div>
+        <h1 class="hero-title">GitHub Analysis</h1>
+        <p class="hero-sub">
+          Paste any GitHub repository URL to get a comprehensive overview, tech stack analysis, and chat with the codebase.
+        </p>
+      </section>
+
+      <div class="glass-card" id="github-input-card">
+        <div class="section-title"><span class="icon">🔍</span> Select Repository</div>
+        <div class="section-divider"></div>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <input type="text" id="github-url-input" class="code-textarea" style="height: 50px; min-height: 50px;" placeholder="https://github.com/user/repo" />
+        </div>
+        <div class="btn-row" style="justify-content: flex-start;">
+            <button class="btn btn-primary" id="github-analyze-btn">
+                <span class="btn-icon">🚀</span> Analyze Repository
+            </button>
+        </div>
+      </div>
+
+      <div class="analyzing-banner" id="github-analyzing-banner" style="display:none">
+        <div class="pulse-ring"></div>
+        <div class="analyzing-text">Cloning and parsing repository...</div>
+        <div class="analyzing-sub">This may take a minute depending on repository size.</div>
+      </div>
+      <div class="error-banner" id="github-error-banner" style="display:none"></div>
+
+      <div id="github-results-area" style="display:none; margin-top: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-main);">Repository Overview</h2>
+        <div class="glass-card markdown-body" id="github-overview-container" style="color: var(--text-sec); line-height: 1.8;">
+            <!-- Overview will be rendered here -->
+        </div>
+
+        <!-- Follow-Up Q&A Chat for GitHub -->
+        <div class="chat-container glass-card" id="github-chat-container" style="margin-top: 2rem;">
+          <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="icon">🤖</span>
+              <span>Chat with Codebase</span>
+            </div>
+            <button id="github-chat-fullscreen-btn" class="icon-btn" title="Toggle Fullscreen" style="background: none; border: none; color: var(--text-sec); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; padding: 0.25rem; border-radius: 4px; transition: all 0.2s ease;">
+              ⛶
+            </button>
+          </div>
+          <div class="chat-history" id="github-chat-history">
+            <!-- Messages will be appended here -->
+          </div>
+          <div class="chat-input-area">
+            <textarea id="github-chat-input" class="chat-textarea" placeholder="Ask about code flows, time complexity, improvement plans..." rows="1"></textarea>
+            <button id="github-chat-send-btn" class="btn btn-primary chat-send-btn" disabled>
               <span>Send</span> 🚀
             </button>
           </div>
