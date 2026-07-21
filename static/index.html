@@ -29,7 +29,7 @@
 
   <link rel="stylesheet" href="/static/app.css" />
 </head>
-<body>
+<body class="sidebar-collapsed">
 
 <canvas id="particles-canvas"></canvas>
 <div class="orb orb-1"></div>
@@ -48,7 +48,12 @@
 
     <nav class="nav-menu">
       <div class="nav-group">
-        <button class="nav-item active" data-view="analyze-view">
+        <button class="nav-item active" data-view="home-view">
+          <span class="nav-icon">🏠</span> Home
+        </button>
+      </div>
+      <div class="nav-group">
+        <button class="nav-item" data-view="analyze-view">
           <span class="nav-icon">📊</span> Analysis
         </button>
         <div class="nav-sub-menu" id="analyze-sub-menu">
@@ -106,8 +111,43 @@
     <main class="main-content">
 
         
+    <!-- Home View -->
+    <div id="home-view" class="view-container active-view">
+      <section class="hero-section">
+        <div class="hero-badge">👋 Welcome to CodeExplain</div>
+        <h1 class="hero-title">Your Personal AI Code Tutor</h1>
+        <p class="hero-sub">
+          Understand, optimize, and learn from any codebase instantly. 
+          Select a tool from the sidebar to get started.
+        </p>
+      </section>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; padding: 2rem;">
+        <div class="glass-card home-card" onclick="window.location.hash='#analyze'" style="cursor: pointer; text-align: center; padding: 2rem; transition: transform 0.2s;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+          <h3>Code Analysis</h3>
+          <p style="color: var(--text-sec); margin-top: 0.5rem;">Get plain-English explanations, complexity analysis, and line-by-line commentary.</p>
+        </div>
+        <div class="glass-card home-card" onclick="window.location.hash='#quiz'" style="cursor: pointer; text-align: center; padding: 2rem; transition: transform 0.2s;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🧠</div>
+          <h3>Quiz Mode</h3>
+          <p style="color: var(--text-sec); margin-top: 0.5rem;">Test your knowledge and comprehension of the code you analyze.</p>
+        </div>
+        <div class="glass-card home-card" onclick="window.location.hash='#leetcode'" style="cursor: pointer; text-align: center; padding: 2rem; transition: transform 0.2s;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🏆</div>
+          <h3>LeetCode Mode</h3>
+          <p style="color: var(--text-sec); margin-top: 0.5rem;">Step-by-step optimization guides from Brute Force to Optimal.</p>
+        </div>
+        <div class="glass-card home-card" onclick="window.location.hash='#github'" style="cursor: pointer; text-align: center; padding: 2rem; transition: transform 0.2s;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🐙</div>
+          <h3>GitHub Intelligence</h3>
+          <p style="color: var(--text-sec); margin-top: 0.5rem;">Analyze full repositories, view file trees, and chat with the codebase.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Analyze View -->
-    <div id="analyze-view" class="view-container active-view">
+    <div id="analyze-view" class="view-container">
             <section class="hero-section">
         <div class="hero-badge">✨ AI-Powered Code Analysis</div>
         <h1 class="hero-title">Code Analysis</h1>
@@ -421,6 +461,7 @@
           <li>Actionable improvement suggestions to optimize performance and readability.</li>
           <li>Interactive quizzes to test comprehension.</li>
           <li>A dedicated LeetCode mode that provides step-by-step optimization guides from Brute Force to Optimal solutions.</li>
+          <li>GitHub repository intelligence, file trees, and project-wide chat.</li>
           <li>Interactive follow-up Q&A chat to clarify doubts.</li>
         </ul>
       </div>

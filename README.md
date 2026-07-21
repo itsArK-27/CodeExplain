@@ -22,6 +22,8 @@
 | 🖱️ **Drag-and-Drop Upload** | Quickly load code files directly from your desktop |
 | 📥 **Markdown Export** | Download your full analysis as a Markdown file |
 | 🌐 **Multi-Language** | Python, JavaScript, Java, C++, Go, Rust, and more |
+| 🏠 **Multi-page Architecture** | Hash-based routing supporting browser forward/backward navigation |
+| 🪄 **Intuitive UI** | Sidebar animations and keyboard gestures (Enter/Esc) for seamless interaction |
 
 ## 🎨 UI Highlights
 - **Immersive 3D design** with glassmorphism panels
@@ -91,7 +93,7 @@ CodeExplain/
 3. **✅ Quiz Mode** — Generates 5 comprehension questions (MCQ + True/False) with scoring, feedback, and retake option.
 4. **✅ SSE Streaming, Code Copying & Markdown Export** — Stream responses live, copy code easily, and download the full analysis as a Markdown file.
 5. **✅ Rich Syntax Editing & Highlighting** — Live coding via CodeMirror editor and rendered code highlighting using Highlight.js.
-6. **✅ Advanced UI Components** — Drag-and-drop file upload, side-by-side diff viewers, IDE theme switcher, and an interactive full-screen Q&A chat.
+6. **✅ Advanced UI Components** — Drag-and-drop file upload, side-by-side diff viewers, IDE theme switcher, interactive full-screen Q&A chat, animated sidebar, and keyboard shortcuts.
 7. **✅ LeetCode Mode** — Fetch solutions by question number and get step-by-step optimization guides with a dedicated Q&A chat.
 
 ---

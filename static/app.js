@@ -62,6 +62,52 @@ async function init() {
   setupMouseEffects();
   setupEventListeners();
   updateStats();
+  
+  // Hash routing on load
+  handleHashChange();
+  window.addEventListener('hashchange', handleHashChange);
+  
+  // Sidebar animation
+  setTimeout(() => {
+    document.body.classList.remove('sidebar-collapsed');
+  }, 600);
+}
+
+function handleHashChange() {
+  let hash = window.location.hash.substring(1);
+  if (!hash) hash = 'home';
+  
+  // Map hash to view
+  const viewMap = {
+    'home': 'home-view',
+    'analyze': 'analyze-view',
+    'quiz': 'quiz-view',
+    'leetcode': 'leetcode-view',
+    'github': 'github-view',
+    'about': 'about-view'
+  };
+  
+  const targetViewId = viewMap[hash] || 'home-view';
+  
+  const navItems = document.querySelectorAll(".nav-item");
+  const views = document.querySelectorAll(".view-container");
+  
+  navItems.forEach(n => n.classList.remove("active"));
+  views.forEach(v => {
+    if (v.id === targetViewId) {
+      v.style.display = "block";
+      v.classList.add("active-view");
+    } else {
+      v.style.display = "none";
+      v.classList.remove("active-view");
+    }
+  });
+  
+  // Set active nav item
+  const activeNavItem = Array.from(navItems).find(n => n.dataset.view === targetViewId);
+  if (activeNavItem) {
+    activeNavItem.classList.add("active");
+  }
 }
 
 function setupEditor() {
@@ -212,29 +258,74 @@ function setupEventListeners() {
     }
   });
 
-  // Navigation View Switching
+  // Navigation View Switching via Hash
   const navItems = document.querySelectorAll(".nav-item");
   const views = document.querySelectorAll(".view-container");
   navItems.forEach(item => {
     item.addEventListener("click", () => {
-      navItems.forEach(n => n.classList.remove("active"));
-      item.classList.add("active");
       const targetView = item.dataset.view;
-      views.forEach(v => {
-        if (v.id === targetView) {
-          v.style.display = "block";
-          v.classList.add("active-view");
-        } else {
-          v.style.display = "none";
-          v.classList.remove("active-view");
-        }
-      });
+      const viewToHash = {
+        'home-view': 'home',
+        'analyze-view': 'analyze',
+        'quiz-view': 'quiz',
+        'leetcode-view': 'leetcode',
+        'github-view': 'github',
+        'about-view': 'about'
+      };
+      const hash = viewToHash[targetView] || 'home';
+      window.location.hash = '#' + hash;
+      
       // On mobile, close sidebar after nav
       if (window.innerWidth <= 768) {
         sidebarEl.classList.remove("open");
       }
     });
   });
+
+  // Intuitive Keyboard Gestures
+  document.addEventListener("keydown", (e) => {
+    // Escape to close sidebar if open
+    if (e.key === "Escape") {
+      // Don't override chat fullscreen escape behavior if it's active
+      const chatContainer = document.getElementById("chat-container");
+      const githubChatContainer = document.getElementById("github-chat-container");
+      const leetcodeChatContainer = document.getElementById("leetcode-chat-container");
+      const isChatFullscreen = (chatContainer && chatContainer.classList.contains("fullscreen")) || 
+                               (githubChatContainer && githubChatContainer.classList.contains("fullscreen")) ||
+                               (leetcodeChatContainer && leetcodeChatContainer.classList.contains("fullscreen"));
+      
+      if (!isChatFullscreen) {
+        if (window.innerWidth <= 768) {
+          document.getElementById("sidebar").classList.remove("open");
+        } else {
+          document.body.classList.add("sidebar-collapsed");
+        }
+      }
+    }
+  });
+  
+  // Enter for inputs
+  const leetcodeInput = document.getElementById("leetcode-question-input");
+  const leetcodeBtn = document.getElementById("leetcode-fetch-btn");
+  if (leetcodeInput && leetcodeBtn) {
+    leetcodeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        leetcodeBtn.click();
+      }
+    });
+  }
+
+  const githubInput = document.getElementById("github-url-input");
+  const githubBtn = document.getElementById("github-analyze-btn");
+  if (githubInput && githubBtn) {
+    githubInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        githubBtn.click();
+      }
+    });
+  }
 
   // Custom smooth scroll that works reliably after layout changes
   // Temporarily disables CSS scroll-behavior to avoid browser interference
