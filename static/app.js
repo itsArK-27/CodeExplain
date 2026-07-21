@@ -724,6 +724,16 @@ async function runQuiz() {
       wireQuizInteraction();
     }
     
+    // Update quiz sub-menu
+    const quizSubMenu = $("quiz-sub-menu");
+    if (quizSubMenu) {
+      let subMenuHtml = `<a href="#quiz-view" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'quiz-view\\']').click()">Start Quiz</a>`;
+      for (let i = 0; i < state.quizQuestions.length; i++) {
+        subMenuHtml += `<a href="#quiz-card-${i}" class="nav-sub-item" onclick="document.querySelector('[data-view=\\'quiz-view\\']').click()">${i + 1}</a>`;
+      }
+      quizSubMenu.innerHTML = subMenuHtml;
+    }
+    
     // Auto-switch to quiz view
     const quizNavBtn = document.querySelector(".nav-item[data-view='quiz-view']");
     if (quizNavBtn) quizNavBtn.click();
