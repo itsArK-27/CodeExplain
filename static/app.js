@@ -1726,6 +1726,26 @@ if (githubAnalyzeBtn) {
     githubAnalyzeBtn.addEventListener("click", runGithubAnalysis);
 }
 
+function renderGithubStats(repoData) {
+    const statsContainer = $("github-repo-stats");
+    if (!statsContainer) return;
+    
+    const stars = repoData.stargazers_count || 0;
+    const forks = repoData.forks_count || 0;
+    const issues = repoData.open_issues_count || 0;
+    const lang = repoData.language || "Unknown";
+    const license = repoData.license ? repoData.license.spdx_id : "No License";
+    
+    statsContainer.innerHTML = `
+        <div class="github-stat-chip">⭐ Stars: <span>${stars.toLocaleString()}</span></div>
+        <div class="github-stat-chip">🍴 Forks: <span>${forks.toLocaleString()}</span></div>
+        <div class="github-stat-chip">🐛 Issues: <span>${issues.toLocaleString()}</span></div>
+        <div class="github-stat-chip">🔤 Language: <span>${lang}</span></div>
+        <div class="github-stat-chip">📜 License: <span>${license}</span></div>
+    `;
+    statsContainer.style.display = "flex";
+}
+
 async function fetchGithubFileTree(url) {
     const sidebar = $("github-file-tree-sidebar");
     if (!sidebar) return;
@@ -1746,6 +1766,7 @@ async function fetchGithubFileTree(url) {
         const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
         if (!repoRes.ok) throw new Error("Repo fetch failed");
         const repoData = await repoRes.json();
+        renderGithubStats(repoData);
         const branch = repoData.default_branch || 'main';
         
         const treeRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`);
