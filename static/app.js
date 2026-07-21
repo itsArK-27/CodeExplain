@@ -1754,6 +1754,7 @@ async function fetchGithubFileTree(url) {
     const sidebar = $("github-file-tree-sidebar");
     if (!sidebar) return;
     
+    sidebar.style.display = 'block';
     sidebar.innerHTML = '<div style="padding: 1rem; color: var(--text-sec); text-align: center;">Fetching file tree...</div>';
     
     const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)/);

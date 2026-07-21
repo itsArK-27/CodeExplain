@@ -83,6 +83,10 @@
         <div class="nav-sub-menu" id="github-sub-menu">
           <a href="#github-input-card" class="nav-sub-item">Paste Repo</a>
           <a href="#github-results-area" class="nav-sub-item" id="nav-link-github-results" style="display: none;">Analysis</a>
+          
+          <div id="github-file-tree-sidebar" style="display: none; margin-top: 1rem; padding-right: 0.5rem; max-height: 40vh; overflow-y: auto; font-size: 0.9em; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+             <div style="padding: 1rem; color: var(--text-sec); text-align: center;">Fetching file tree...</div>
+          </div>
         </div>
       </div>
       <button class="nav-item" data-view="about-view">
@@ -367,10 +371,7 @@
       <div id="github-results-area" style="display:none; margin-top: 2rem;">
         <div id="github-repo-stats" class="github-stats-container" style="display:none"></div>
         <div class="github-split-view">
-          <div class="github-sidebar glass-card" id="github-file-tree-sidebar">
-             <div style="padding: 1rem; color: var(--text-sec); text-align: center;">Fetching file tree...</div>
-          </div>
-          <div class="github-main-content">
+          <div class="github-main-content" style="width: 100%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2 style="margin: 0; color: var(--text-main);">Repository Overview</h2>
                 <button class="btn btn-outline" id="github-download-btn" style="display: none; font-size: 0.9rem; padding: 0.4rem 0.8rem;">⬇️ Download</button>
