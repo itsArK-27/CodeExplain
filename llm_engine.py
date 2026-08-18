@@ -244,7 +244,7 @@ def generate_leetcode_stream(question_number: str, language: str, response_langu
             {"role": "user", "content": prompt}
         ],
         temperature=0.3,
-        max_tokens=4096,
+        max_tokens=2048,
         response_format={"type": "json_object"},
         stream=True
     )
@@ -275,7 +275,7 @@ def generate_github_analysis_stream(repo_context: str, response_language: str = 
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
-            max_tokens=4096,
+            max_tokens=2048,
             stream=True
         )
         

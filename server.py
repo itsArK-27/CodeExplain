@@ -167,7 +167,7 @@ def api_meta():
         "has_key": bool(os.getenv("GROQ_API_KEY")),
     })
 
-def clone_and_parse_github_repo_stream(url: str, max_chars=30000):
+def clone_and_parse_github_repo_stream(url: str, max_chars=12000):
     yield {"type": "status", "message": "Cloning repository..."}
     with tempfile.TemporaryDirectory() as temp_dir:
         # Clone repo
