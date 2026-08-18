@@ -72,7 +72,7 @@ The app opens at **http://localhost:5000**
 ```
 CodeExplain/
 ├── server.py           # Main Flask backend application
-├── llm_engine.py       # Groq API integration (Llama-3.3-70b-versatile)
+├── llm_engine.py       # Groq API integration (openai/gpt-oss-120b)
 ├── prompts.py          # All LLM prompt templates
 ├── quiz_engine.py      # Quiz mode state & rendering
 ├── utils.py            # Language detection & helpers
@@ -104,7 +104,7 @@ CodeExplain/
 
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript (CodeMirror 5, Highlight.js, canvas particles, glassmorphism, mouse-parallax tilt)
 - **Backend**: Flask (Python) with Server-Sent Events (SSE) streaming support
-- **LLM**: Groq LLaMA 3.3 70B (`llama-3.3-70b-versatile`)
+- **LLM**: Groq LLaMA (`openai/gpt-oss-120b`)
 - **Libraries**: `groq`, `python-dotenv`, `flask`, `gunicorn`
 
 ---

@@ -111,7 +111,7 @@ def generate_quiz(code: str, language: str, explanation: str, response_language:
     prompt = get_quiz_prompt(code, language, explanation, response_language).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
@@ -142,7 +142,7 @@ def analyze_stream(code: str, language: str, response_language: str = "English",
     prompt = get_full_analysis_prompt(code, language, response_language, options).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
@@ -188,7 +188,7 @@ def chat_stream(code: str, language: str, explanation: str, history: list, respo
         
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.7,
             max_tokens=2048,
@@ -215,7 +215,7 @@ def generate_leetcode_chat_stream(question_title: str, question_description: str
         
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.7,
             max_tokens=2048,
@@ -238,7 +238,7 @@ def generate_leetcode_stream(question_number: str, language: str, response_langu
     prompt = get_leetcode_prompt(question_number, language, response_language).replace("{json_schema}", schema)
     
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
@@ -270,7 +270,7 @@ def generate_github_analysis_stream(repo_context: str, response_language: str = 
     
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "user", "content": prompt}
             ],
@@ -299,7 +299,7 @@ def generate_github_chat_stream(repo_context: str, history: list, response_langu
         
     try:
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0.7,
             max_tokens=2048,
