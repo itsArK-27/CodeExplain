@@ -60,6 +60,10 @@ copy .env.example .env
 
 ### 3. Run the App
 ```bash
+# On Windows, you can simply run:
+start_server.bat
+
+# Or manually:
 python server.py
 ```
 
@@ -76,6 +80,9 @@ CodeExplain/
 ├── prompts.py          # All LLM prompt templates
 ├── quiz_engine.py      # Quiz mode state & rendering
 ├── utils.py            # Language detection & helpers
+├── list_models.py      # Helper script to list available Groq models
+├── start_server.bat    # Windows script to start the Flask server
+├── stop_server.bat     # Windows script to stop the Flask server
 ├── static/             # Frontend assets served by Flask
 │   ├── index.html      # Main HTML file with CodeMirror & Highlight.js
 │   ├── app.css         # Immersive glassmorphism and 3D design styles
@@ -104,7 +111,7 @@ CodeExplain/
 
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript (CodeMirror 5, Highlight.js, canvas particles, glassmorphism, mouse-parallax tilt)
 - **Backend**: Flask (Python) with Server-Sent Events (SSE) streaming support
-- **LLM**: Groq LLaMA (`openai/gpt-oss-120b`)
+- **LLM**: Groq (`openai/gpt-oss-120b`)
 - **Libraries**: `groq`, `python-dotenv`, `flask`, `gunicorn`
 
 ---
